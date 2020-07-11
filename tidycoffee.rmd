@@ -26,3 +26,95 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+coffee_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+
+```
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggridges)
+library(GGally)
+library(patchwork)
+library(forcats)
+
+coffee <- coffee_ratings %>%
+  mutate(country_of_origin=fct_recode(country_of_origin,"Hawai‘i" = "United States (Hawaii)","Tanzania"="Tanzania, United Republic Of"))
+```
+```{r}
+data <- coffee%>%
+  group_by(country_of_origin)%>%
+  count()%>%
+  filter(n>30)%>%
+  left_join(coffee)
+
+order_to <- data %>%
+  group_by(country_of_origin) %>%
+  summarize(mean(acidity)) %>%
+  arrange(desc(`mean(acidity)`)) %>%
+  pull(country_of_origin)
+```
+```{r}
+data$country_of_origin <- factor(data$country_of_origin,levels = order_to)
+```
+```{r}
+ggplot(data, aes(x=acidity,y=country_of_origin,fill=country_of_origin)) +
+  ggridges::geom_density_ridges(scale = 0.95) 
+
+```
+```{r}
+ggplot(data, aes(x=country_of_origin, y=acidity))+
+  geom_boxplot()
+```
+```{r}
+data1<-data%>%
+  group_by(country_of_origin)%>%
+  summarise(med=median(acidity))%>%
+  left_join(data)
+```
+
+
+```{r}
+data_sorted <- data1%>%
+  mutate(country_of_origin = fct_reorder(country_of_origin, med))
+
+```
+```{r}
+library(showtext)
+library(ggsci)
+font_add_google("Poppins", "Poppins")
+font_add_google("Roboto Mono", "Roboto Mono")
+showtext_auto()
+
+theme_set(theme_light(base_size = 8, base_family = "Poppins"))
+
+ggplot(data_sorted, aes(x=country_of_origin, y= acidity, color=country_of_origin))+
+  #geom_point(size=1, alpha=0.2)+
+  geom_violin()+
+  coord_flip() +
+  #scale_fill_brewer(type = "qual", palette = 3)+
+  scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005))
+  #geom_jitter(size = 2, alpha = 0.15, width = 0.2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
