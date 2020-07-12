@@ -82,6 +82,7 @@ data_sorted <- data1%>%
 ```
 ```{r}
 library(showtext)
+library(ggbeeswarm)
 library(ggsci)
 font_add_google("Poppins", "Poppins")
 font_add_google("Roboto Mono", "Roboto Mono")
@@ -91,16 +92,28 @@ showtext_auto()
 
 ggplot(data_sorted, aes(x=country_of_origin, y= acidity))+
   #geom_point(size=1, alpha=0.2)+
-  geom_violin(color="chocolate4", fill="darkgoldenrod", alpha =0.5)+
+  #geom_quasirandom(alpha=0.25,width=0.3)+
+  geom_violin(color="chocolate4", fill="darkgoldenrod", alpha =0.5,draw_quantiles = c(0.5))+
   coord_flip() +
   scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005))+
   theme(legend.position = "none", axis.title.x = element_text(color = "black", size = 10, vjust = -0.35, margin = margin(10,0,10,0)), axis.title.y = element_text(color= "black", size = 10, vjust =0.35, margin = margin(0,10,0,10)), panel.background = element_rect( fill= "bisque2"), plot.background = element_rect( fill = "bisque2"),axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),plot.title= element_text(size=14,face = "bold", margin = margin(10,0,5,0)))+
   labs(x="Country of Origin", y = "Acidity Rating", title = "Acidity Distribution of Coffee by Country",subtitle = "Only countries with n>30 were included")
-  #geom_jitter(size = 2, alpha = 0.15, width = 0.2)
+  #geom_jitter(size = 2, alpha = 0.25, width = 0.2)
 ```
 
 
 
+```{r}
+ggplot(data_sorted, aes(x=country_of_origin, y= acidity))+
+  #geom_point(size=1, alpha=0.2)+
+  geom_quasirandom(alpha=0.25,width=0.3)+
+  #geom_violin(color="chocolate4", fill="darkgoldenrod", alpha =0.5,draw_quantiles = c(0.5))+
+  coord_flip() +
+  scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005))+
+  theme(legend.position = "none", axis.title.x = element_text(color = "black", size = 10, vjust = -0.35, margin = margin(10,0,10,0)), axis.title.y = element_text(color= "black", size = 10, vjust =0.35, margin = margin(0,10,0,10)), panel.background = element_rect( fill= "bisque2"), plot.background = element_rect( fill = "bisque2"),axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),plot.title= element_text(size=14,face = "bold", margin = margin(10,0,5,0)))+
+  labs(x="Country of Origin", y = "Acidity Rating", title = "Acidity Distribution of Coffee by Country",subtitle = "Only countries with n>30 were included")
+  #geom_jitter(size = 2, alpha = 0.25, width = 0.2)
+```
 
 
 
