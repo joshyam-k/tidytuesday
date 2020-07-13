@@ -3,33 +3,10 @@ title: "tidycoffee"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 ```{r}
 coffee_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
-
 ```
+
 ```{r}
 library(tidyverse)
 library(dplyr)
@@ -39,13 +16,18 @@ library(patchwork)
 library(forcats)
 
 coffee <- coffee_ratings %>%
-  mutate(country_of_origin=fct_recode(country_of_origin,"Hawai‘i" = "United States (Hawaii)","Tanzania"="Tanzania, United Republic Of"))
+  mutate(country_of_origin = fct_recode(
+    country_of_origin,
+    "Hawai‘i" = "United States (Hawaii)",
+    "Tanzania" = "Tanzania, United Republic Of")
+  )
 ```
+
 ```{r}
-data <- coffee%>%
-  group_by(country_of_origin)%>%
-  count()%>%
-  filter(n>30)%>%
+data <- coffee %>%
+  group_by(country_of_origin) %>%
+  count() %>%
+  filter(n > 30) %>%
   left_join(coffee)
 
 order_to <- data %>%
@@ -54,32 +36,43 @@ order_to <- data %>%
   arrange(desc(`mean(acidity)`)) %>%
   pull(country_of_origin)
 ```
-```{r}
-data$country_of_origin <- factor(data$country_of_origin,levels = order_to)
-```
-```{r}
-ggplot(data, aes(x=acidity,y=country_of_origin,fill=country_of_origin)) +
-  ggridges::geom_density_ridges(scale = 0.95) 
 
-```
 ```{r}
-ggplot(data, aes(x=country_of_origin, y=acidity))+
+data$country_of_origin <- factor(
+  data$country_of_origin,
+  levels = order_to)
+```
+
+```{r}
+ggplot(data, 
+       aes(x = acidity,
+           y = country_of_origin,
+           fill = country_of_origin)) +
+  ggridges::geom_density_ridges(scale = 0.95) 
+```
+
+```{r}
+ggplot(data, 
+       aes(x = country_of_origin, 
+           y = acidity)) +
   geom_boxplot()
 ```
+
 ```{r}
 data1<-data%>%
-  group_by(country_of_origin)%>%
-  summarise(med=median(acidity))%>%
+  group_by(country_of_origin) %>%
+  summarise(med = median(acidity)) %>%
   left_join(data)
 ```
 
 
 ```{r}
-data_sorted <- data1%>%
-  mutate(country_of_origin = fct_reorder(country_of_origin, med))%>%
+data_sorted <- data1 %>%
+  mutate(country_of_origin = fct_reorder(country_of_origin, med)) %>%
   filter(acidity > 6)
 
 ```
+
 ```{r}
 library(showtext)
 library(ggbeeswarm)
@@ -88,48 +81,68 @@ font_add_google("Poppins", "Poppins")
 font_add_google("Roboto Mono", "Roboto Mono")
 showtext_auto()
 
-#theme_set(theme_light(base_size = 8, base_family = "Poppins"))
-
-ggplot(data_sorted, aes(x=country_of_origin, y= acidity))+
-  #geom_point(size=1, alpha=0.2)+
-  #geom_quasirandom(alpha=0.25,width=0.3)+
-  geom_violin(color="chocolate4", fill="darkgoldenrod", alpha =0.5,draw_quantiles = c(0.5))+
+ggplot(data_sorted, aes(x=country_of_origin, y= acidity)) +
+  geom_violin(color="chocolate4", 
+              fill="darkgoldenrod", 
+              alpha =0.5,
+              draw_quantiles = c(0.5)) +
   coord_flip() +
-  scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005))+
-  theme(legend.position = "none", axis.title.x = element_text(color = "black", size = 10, vjust = -0.35, margin = margin(10,0,10,0)), axis.title.y = element_text(color= "black", size = 10, vjust =0.35, margin = margin(0,10,0,10)), panel.background = element_rect( fill= "bisque2"), plot.background = element_rect( fill = "bisque2"),axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),plot.title= element_text(size=14,face = "bold", margin = margin(10,0,5,0)))+
-  labs(x="Country of Origin", y = "Acidity Rating", title = "Acidity Distribution of Coffee by Country",subtitle = "Only countries with n>30 were included")
-  #geom_jitter(size = 2, alpha = 0.25, width = 0.2)
+  scale_y_continuous(limits = c(5, 9),
+                     expand = c(0.005, 0.005)) +
+  theme(legend.position = "none", 
+        axis.title.x = element_text(color = "black", 
+                                    size = 10, 
+                                    vjust = -0.35, 
+                                    margin = margin(10, 0, 10, 0)), 
+        axis.title.y = element_text(color= "black", 
+                                    size = 10, 
+                                    vjust =0.35, 
+                                    margin = margin(0, 10, 0, 10)), 
+        panel.background = element_rect(fill= "bisque2"), 
+        plot.background = element_rect(fill = "bisque2"),
+        axis.text.x = element_text(color = "black"), 
+        axis.text.y = element_text(color = "black"), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        plot.title= element_text(size=14,
+                                 face = "bold", 
+                                 margin = margin(10, 0, 5, 0))) +
+  labs(x="Country of Origin", 
+       y = "Acidity Rating", 
+       title = "Acidity Distribution of Coffee by Country",
+       subtitle = "Only countries with n>30 were included")
+
 ```
 
-
-
 ```{r}
-ggplot(data_sorted, aes(x=country_of_origin, y= acidity))+
-  #geom_point(size=1, alpha=0.2)+
-  geom_quasirandom(alpha=0.25,width=0.3)+
-  #geom_violin(color="chocolate4", fill="darkgoldenrod", alpha =0.5,draw_quantiles = c(0.5))+
+ggplot(data_sorted, aes(x = country_of_origin, y = acidity))+
+  geom_quasirandom(alpha = 0.25, width = 0.3)+
   coord_flip() +
   scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005))+
   theme(legend.position = "none", axis.title.x = element_text(color = "black", size = 10, vjust = -0.35, margin = margin(10,0,10,0)), axis.title.y = element_text(color= "black", size = 10, vjust =0.35, margin = margin(0,10,0,10)), panel.background = element_rect( fill= "bisque2"), plot.background = element_rect( fill = "bisque2"),axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),plot.title= element_text(size=14,face = "bold", margin = margin(10,0,5,0)), plot.margin=unit(c(0,2,0,2), "cm"))+
-  labs(x="Country of Origin", y = "Acidity Rating", title = "Acidity Distribution of Coffee by Country",subtitle = "Only countries with n>30 were included")
-  #geom_jitter(size = 2, alpha = 0.25, width = 0.2)
+  labs(x="Country of Origin", y = "Acidity Rating", title = "Acidity Distribution of Coffee by Country",subtitle = "Only countries with n>30 were included")+
+  scale_y_continuous(limits = c(5, 9),expand = c(0.005, 0.005)) +
+  theme(legend.position = "none", 
+        axis.title.x = element_text(color = "black", 
+                                    size = 10, 
+                                    vjust = -0.35, 
+                                    margin = margin(10, 0, 10, 0)), 
+        axis.title.y = element_text(color = "black", 
+                                    size = 10, 
+                                    vjust = 0.35, 
+                                    margin = margin(0, 10, 0, 10)), 
+        panel.background = element_rect( fill= "bisque2"), 
+        plot.background = element_rect( fill = "bisque2"),
+        axis.text.x = element_text(color = "black"), 
+        axis.text.y = element_text(color = "black"), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        plot.title= element_text(size = 14, face = "bold", margin = margin(10, 0, 5, 0)))+
+  labs(x="Country of Origin", 
+       y = "Acidity Rating", 
+       title = "Acidity Distribution of Coffee by Country",
+       subtitle = "Only countries with n>30 were included")
+
+
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
