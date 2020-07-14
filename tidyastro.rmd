@@ -1,0 +1,128 @@
+---
+title: "tidyastro"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(knitr)
+library(ggridges)
+
+astronauts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-14/astronauts.csv')%>% 
+  clean_names() %>% 
+  filter(!is.na(number)) %>%  # remove last row (all values are NA)
+  mutate(
+    sex = if_else(sex == "M", "male", "female"),
+    military_civilian = if_else(military_civilian == "Mil", "military", "civilian")
+  )
+```
+```{r}
+# general data exploration
+ggplot(astronauts, 
+      aes(x=year_of_birth))+
+      geom_histogram(binwidth = 4)
+```
+
+```{r}
+# creating a new column for the first letter of the astronauts last name
+astro_initial<-astronauts %>%
+    distinct()%>%
+    mutate(first_letter_of_lastname = substr(name,1,1))
+
+```
+
+
+```{r}
+# alphabetize
+astro_initial_ar<- astro_initial%>%
+  select(first_letter_of_lastname,
+         name,
+         year_of_selection)%>%
+  filter(year_of_selection > 1955 & year_of_selection < 1969)%>%
+  arrange(first_letter_of_lastname)
+```
+
+```{r}
+ggplot(astro_initial_ar,
+      aes(x=first_letter_of_lastname))+
+      geom_bar(color="azure3", 
+               fill="darkslategrey")+
+      facet_wrap(~year_of_selection)+ 
+      #when space race was hottest?
+      labs(title = "Distribution of the First Letter of the Last Name of Astronauts",
+           x= "First Letter of Last Name",
+           y= "Count",
+           subtitle = "During The Space Race")+
+      theme(axis.title.x = element_text(color = "black", 
+                                    size = 12, 
+                                    vjust = -0.35, 
+                                    margin = margin(10, 0, 10, 0)), 
+        axis.title.y = element_text(color= "black", 
+                                    size = 12, 
+                                    vjust =0.35, 
+                                    margin = margin(0, 10, 0, 10)), 
+        panel.background = element_rect(fill= "azure3"), 
+        plot.background = element_rect(fill = "azure3"),
+        axis.text.x = element_text(color = "black"), 
+        axis.text.y = element_text(color = "black"), 
+        plot.subtitle = element_text(margin= margin(5,0,15,0)),
+        panel.grid.major = element_blank(), 
+        plot.title= element_text(size=14,
+                                 face = "bold", 
+                                 margin = margin(10, 0, 5, 0))) 
+
+```
+
+```{r}
+# This turned out to be less cool than I though it would be, more of a dplyr exercise than a data viz one...
+```
+
+
+```{r}
+# un-faceted version
+ggplot(astro_initial_ar,
+      aes(x=first_letter_of_lastname))+
+      geom_bar(color="azure3", 
+               fill="darkslategrey")+
+      labs(title = "Distribution of the First Letter of the Last Name of Astronauts",
+           x= "First Letter of Last Name",
+           y= "Count",
+           subtitle = "During The Space Race")+
+      theme(axis.title.x = element_text(color = "black", 
+                                    size = 12, 
+                                    vjust = -0.35, 
+                                    margin = margin(10, 0, 10, 0)), 
+        axis.title.y = element_text(color= "black", 
+                                    size = 12, 
+                                    vjust =0.35, 
+                                    margin = margin(0, 10, 0, 10)), 
+        panel.background = element_rect(fill= "azure3"), 
+        plot.background = element_rect(fill = "azure3"),
+        axis.text.x = element_text(color = "black"), 
+        axis.text.y = element_text(color = "black"), 
+        plot.subtitle = element_text(margin= margin(5,0,15,0)),
+        panel.grid.major = element_blank(), 
+        plot.title= element_text(size=14,
+                                 face = "bold", 
+                                 margin = margin(10, 0, 5, 0))) 
+
+```
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
