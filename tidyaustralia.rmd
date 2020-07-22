@@ -1,0 +1,208 @@
+---
+title: "tidyaustralia"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+library(cowplot)
+```
+
+```{r}
+animal_outcomes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-21/animal_outcomes.csv')
+animal_complaints <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-21/animal_complaints.csv')
+brisbane_complaints <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-21/brisbane_complaints.csv')
+
+```
+
+## data cleaning
+```{r}
+names(animal_outcomes)[4]<-"Australian Capital Territory"
+names(animal_outcomes)[5]<-"New South Wales"
+names(animal_outcomes)[6]<-"Northern Territory"
+names(animal_outcomes)[7]<-"Queensland"
+names(animal_outcomes)[8]<-"South Australia"
+names(animal_outcomes)[9]<-"Tasmania"
+names(animal_outcomes)[10]<-"Victoria"
+names(animal_outcomes)[11]<-"Western Australia"
+
+```
+
+
+```{r}
+animal_outcomes1<-animal_outcomes%>%
+  pivot_longer(c("Australian Capital Territory":"Total"),
+  names_to = "Area",
+  values_to = "count",
+  values_drop_na = TRUE
+  )
+```
+
+```{r}
+animal_complaints%>%
+  ggplot(aes(x=`Complaint Type`,fill = `Animal Type`))+
+  geom_bar()
+```
+```{r}
+animal_outcomes1%>%
+  count(animal_type)
+```
+```{r}
+animal_outcomes1%>%
+  ggplot(aes(x=animal_type,fill=outcome))+
+  geom_bar()#+
+  #facet_wrap(~year)
+```
+```{r}
+brisbane_complaints%>%
+  count(date_range)
+```
+
+```{r}
+#  I'm sure there's an easier way to clean up the data_range column, i'd like to look into one...
+brisbane_complaints1<-brisbane_complaints%>%
+   mutate(date_range = case_when(date_range=="1st-quarter-2016-17.csv" ~ "january-april-2016-17",
+                                 date_range=="apr-jun-2019.csv" ~ "april-june-2019",
+                                 date_range=="apr-to-jun-2018.csv"~ "april-june-2018",
+                                 date_range=="april-june-2016.csv"~ "april-june-2016",
+                                 date_range=="april-to-june-2017.csv"~ "april-june-2017",
+                                 date_range=="cars-srsa-open-data-animal-related-complaints-apr-to-jun-2020.csv" ~ "april-june-2020",
+                                 date_range=="cars-srsa-open-data-animal-related-complaints-jan-to-mar-2020.csv" ~ "january-march-2020",
+                                 date_range=="cars-srsa-open-data-animal-related-complaints-oct-to-dec-2019.csv" ~ "october-december-2019",
+                                 date_range=="jan-mar-2019.csv"~ "january-march-2019",
+                                 date_range=="jan-to-mar-2018.csv"~ "january-march-2018",
+                                 date_range=="january-to-march-2017.csv" ~"january-march-2017",
+                                 date_range=="jul-to-sep-2018.csv"~ "july-september-2018",
+                                 date_range=="jul-to-sep-2019.csv" ~"july-september-2019",
+                                 date_range=="july-to-september-2017.csv" ~ "july-september-2017",
+                                 date_range=="oct-to-dec-2018.csv" ~ "october-december-2018",
+                                 date_range=="october-to-december-2016.csv" ~ "october-december-2016",
+                                 date_range=="october-to-december-2017.csv" ~ "october-december-2017",
+                                 T ~ "blah"))%>%
+    separate(date_range, into = c("start_month","end_month","year"))%>%
+    unite(month_range,start_month, end_month, sep = "-")%>%
+    mutate(month_range1 = case_when(month_range == "january-march" ~ "Q1", 
+                                   month_range == "april-june" ~ "Q2",
+                                   month_range == "july-september" ~ "Q3",
+                                   T~ "Q4"))%>%
+    select(-responsible_office,
+           -city)%>%
+    filter(category == "Attack On A Person" | 
+           category == "Attack On An Animal" | 
+           category == "Dangerous" | 
+           category == "Menacing", year != 2016)%>%
+    filter(year != 2020)%>%
+    na.omit()
+
+  
+```
+
+
+
+
+```{r}
+
+brisbane_complaints1%>%
+  count(month_range, year)
+
+# looks like we're missing data for july-september 2016 and the second half of 2020 (duh), so I might not include that in #my visualization
+```
+
+
+```{r}
+d1<-brisbane_complaints1%>%
+  filter(year==2017)
+
+  g1<-ggplot(d1,aes(x=month_range1, fill=category))+
+  geom_bar()+
+  scale_fill_manual(values = c("aliceblue", "darkkhaki",
+                                      "dodgerblue4", "cornsilk3"))+
+  labs(title = "Number of Violent  Animal Complaints Per-Quarter In Brisbane, (2017-2019)",
+       x= "", y = "")+
+   theme(panel.background = element_rect(fill= "darkslategrey"), 
+        plot.background = element_rect(fill = "darkslategrey"),
+        axis.text.x = element_text(color = "white"), 
+        axis.text.y = element_text(color = "white"), 
+        plot.subtitle = element_text(margin= margin(0,0,15,0),
+                                    hjust=0, color = "white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title= element_text(size=18,
+                                    color = "white",
+                                    face = "bold", 
+                                    margin = margin(10, 0, 2, 0), hjust =0),
+        legend.position = "none",
+        plot.margin = unit(c(0,5.5,0,0), "cm")) 
+  
+  
+  d2<-brisbane_complaints1%>%
+    filter(year==2018)
+  
+  g2<-ggplot(d2,aes(x=month_range1, fill=category))+
+  geom_bar()+
+  scale_fill_manual(values = c("aliceblue", "darkkhaki",
+                                      "dodgerblue4", "cornsilk3"))+
+  labs(x="", y="")+
+  theme(panel.background = element_rect(fill= "darkslategrey"), 
+        plot.background = element_rect(fill = "darkslategrey"),
+        axis.text.x = element_text(color = "white"), 
+        axis.text.y = element_text(color = "white"), 
+        plot.subtitle = element_text(margin= margin(0,0,15,0),
+                                    hjust=0, color = "white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title= element_text(size=14,
+                                    color = "white",
+                                    face = "bold", 
+                                    margin = margin(10, 0, 2, 0), hjust =0),
+        legend.position = "right",
+        plot.margin = unit(c(1,1,0.5,0), "cm"))
+  
+  
+  d3<-brisbane_complaints1%>%
+    filter(year==2019)
+  
+  g3<-ggplot(d3,aes(x=month_range1, fill=category))+
+  geom_bar()+
+  scale_fill_manual(values = c("aliceblue", "darkkhaki",
+                                      "dodgerblue4", "cornsilk3"))+
+  labs(x="", y="")+
+  theme(panel.background = element_rect(fill= "darkslategrey"), 
+        plot.background = element_rect(fill = "darkslategrey"),
+        axis.text.x = element_text(color = "white"), 
+        axis.text.y = element_text(color = "white"), 
+        plot.subtitle = element_text(margin= margin(0,0,15,0),
+                                    hjust=0, color = "white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title= element_text(size=14,
+                                    color = "white",
+                                    face = "bold", 
+                                    margin = margin(10, 0, 2, 0), hjust =0),
+        legend.position = "none",
+        plot.margin = unit(c(1,5.5,0,0), "cm")) #top, right, bottom, left
+
+```
+  
+```{r fig.height=5, fig.width= 8}
+#ggarrange(g1,g2,g3,
+          #ncol=1, nrow = 3)
+# either works
+plot_grid(g1,g2,g3,
+          ncol=1,
+          nrow=3)
+
+
+```
+
+
+
+
+
+
+
