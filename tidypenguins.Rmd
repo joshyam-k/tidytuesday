@@ -54,13 +54,7 @@ pengs%>%
 ```
 
 
-```{r}
-title <- grobTree(textGrob("Penguins Mass (g)",
-                             x = 0.1, y = 0.9, hjust = 0,
-                             gp = gpar(col = "black",
-                                       fontsize = 12,
-                                       fontfamily = "Futura Medium")))
-```
+
 
 
    
@@ -128,7 +122,7 @@ main_graph<-ggplot(pengs,
             size=1.2,
             color="darkgray",
             family="Futura Medium")+
-  labs(x="", y="", title = "")+
+  labs(x="", y="", title = "", caption = "Cummulative 2007-2009")+
   geom_richtext(aes(x=1500, y= 3.5,
                     label ="Comparison of <span style='color:lightblue;'> Female </span> and <span style='color:darkslategray3;'> Male <br></span> Palmer Penguin Masses in grams"),
                     family="Futura Medium",
@@ -154,7 +148,8 @@ main_graph<-ggplot(pengs,
         axis.text.x = element_blank(),
         #plot.margin = unit(c(1,0,1,0),"cm"),
         legend.position = "none",
-        text = element_text(family = "Times"))+
+        text = element_text(family = "Times"),
+        plot.caption = element_text(color = "black", family = "Futura Medium"))+
   geom_text(
     data = pengs,
     aes(
@@ -186,8 +181,8 @@ facetedgraph<-ggplot(pengs, aes(x=body_mass_g, y= species, fill=sex))+
                   theme(panel.grid.major.y = element_blank(),
                        panel.grid.major.x = element_blank(),
                        panel.grid.minor = element_blank(),
-                       plot.background = element_rect(fill = "white", color = "aliceblue"),
-                       panel.background = element_rect(fill = "white",color="aliceblue"),
+                       plot.background = element_rect(fill = "white", color= "aquamarine4"),
+                       panel.background = element_rect(fill = "white"),
                        axis.ticks.y =element_blank(),
                        axis.text.y = element_blank(),
                        legend.position = "none",
