@@ -1,0 +1,212 @@
+---
+title: "tidypeng"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+
+
+```
+
+```{r}
+library(tidyverse)
+library(ggridges)
+library(grid)
+library(ggtext)
+library(extrafont)
+library(cowplot)
+library(ggpubr)
+```
+```{r}
+library(extrafont)
+font_import()
+
+```
+```{r}
+loadfonts()
+```
+
+
+```{r}
+penguindata <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-28/penguins.csv')
+```
+
+```{r}
+# three islands (biscoe, dream, torgersen)
+# three years (2007, 2008, 2009)
+# three species (Adelie, Chinstrap, Gentoo)
+penguindata%>%
+  count(species)
+
+pengs<-penguindata%>%
+  drop_na()%>%
+  mutate(y=as.numeric(as.factor(species)),
+         max= max(body_mass_g),
+         med=median(body_mass_g))
+```
+```{r}
+pengs%>%
+  filter(species == "Adelie" & sex == "female")%>%
+  summarise(med=median(body_mass_g))
+```
+
+
+```{r}
+title <- grobTree(textGrob("Penguins Mass (g)",
+                             x = 0.1, y = 0.9, hjust = 0,
+                             gp = gpar(col = "black",
+                                       fontsize = 12,
+                                       fontfamily = "Futura Medium")))
+```
+
+
+   
+
+
+
+```{r}
+main_graph<-ggplot(pengs,
+       aes(x=body_mass_g,
+           y= species,
+           fill=sex))+
+  geom_density_ridges(scale=0.9,
+                      alpha=0.8,
+                      color="grey",
+                      from = 0, to = 9000)+
+  scale_fill_cyclical(breaks = c("male", "female"),
+                      values = c("lightblue","darkslategray3"),
+                      guide= "legend")+
+  geom_point(aes(x=5500, y= 2.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4",
+             )+
+  geom_point(aes(x=4700, y= 2.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4")+
+  geom_text(aes(x=4700, y= 2.88, label ="4700"),
+            size=1.2,
+            color="darkgray",
+            family="Futura Medium")+
+  geom_text(aes(x=5500, y= 2.88, label ="5500"),
+            size=1.2,
+            color="darkgrey",
+            family="Futura Medium")+
+  geom_point(aes(x=3550, y= 1.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4")+
+  geom_text(aes(x=3550, y= 1.88, label ="3550"),
+            size=1.2,
+            color="darkgray",
+            family="Futura Medium")+
+  geom_point(aes(x=3950, y= 1.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4")+
+  geom_text(aes(x=3950, y= 1.88, label ="3950"),
+            size=1.2,
+            color="darkgray",
+            family="Futura Medium")+
+  geom_point(aes(x=4000, y= 0.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4")+
+  geom_text(aes(x=4000, y= 0.88, label ="4000"),
+            size=1.2,
+            color="darkgray",
+            family="Futura Medium")+
+  geom_point(aes(x=3400, y= 0.97),
+             size=0.5,
+             shape=5,
+             color="deepskyblue4")+
+  geom_text(aes(x=3400, y= 0.88, label ="3400"),
+            size=1.2,
+            color="darkgray",
+            family="Futura Medium")+
+  labs(x="", y="", title = "")+
+  geom_richtext(aes(x=1500, y= 3.5,
+                    label ="Comparison of <span style='color:lightblue;'> Female </span> and <span style='color:darkslategray3;'> Male <br></span> Palmer Penguin Masses in grams"),
+                    family="Futura Medium",
+                    color ="grey20",
+                    size=3,
+                    fill = "aliceblue",
+                    label.color = NA)+
+  geom_richtext(aes(x=5800, y=1.25,
+                    label="Male Palmers tend to <br> weigh more than females"),
+                    family="Futura Medium",
+                    size=2,
+                    color="darkgray",
+                    fill=NA,
+                    label.color =NA)+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "aliceblue"),
+        panel.background = element_rect(fill = "aliceblue"),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y =element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        #plot.margin = unit(c(1,0,1,0),"cm"),
+        legend.position = "none",
+        text = element_text(family = "Times"))+
+  geom_text(
+    data = pengs,
+    aes(
+      x = max+1000, 
+      y = y+0.025,
+      label = species),
+    color="darkgrey",
+    size= 4,
+    family="Futura Medium",
+    vjust = 0,
+    hjust = -0.01
+    )
+main_graph
+```
+
+                             
+
+
+
+
+
+```{r}
+facetedgraph<-ggplot(pengs, aes(x=body_mass_g, y= species, fill=sex))+
+                  geom_density_ridges(color="grey",from =1500, to =7500, scale=0.9)+
+                  scale_fill_cyclical(breaks = c("male", "female"),
+                      values = c("lightblue","darkslategray3"),
+                      guide= "legend")+
+                  facet_wrap(~year)+
+                  theme(panel.grid.major.y = element_blank(),
+                       panel.grid.major.x = element_blank(),
+                       panel.grid.minor = element_blank(),
+                       plot.background = element_rect(fill = "white", color = "aliceblue"),
+                       panel.background = element_rect(fill = "white",color="aliceblue"),
+                       axis.ticks.y =element_blank(),
+                       axis.text.y = element_blank(),
+                       legend.position = "none",
+                       text = element_text(family = "Futura Medium"),
+                       axis.title.x = element_blank(),
+                       axis.title.y= element_blank(),
+                       strip.background = element_rect(fill="white"))
+facetedgraph
+```
+
+```{r fig.width=6}
+ggarrange(main_graph, facetedgraph, ncol=1, nrow =2)
+```
+
+
+
+
+
+
+
+
+
