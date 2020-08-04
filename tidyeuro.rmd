@@ -1,0 +1,198 @@
+---
+title: "euroenergy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load packages
+
+library(tidyverse)
+library(biscale)
+library(maps)
+library(cowplot)
+library(ggtext)
+library(ragg)
+library(extrafont)
+```
+
+```{r}
+font_import()
+```
+
+```{r}
+loadfonts()
+```
+
+```{r}
+#load data
+
+country_totals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/energy_types.csv')
+```
+
+```{r}
+#checking for NA's
+
+country_totals%>%
+  count(country_name)
+```
+```{r}
+#pivot and fix NA's
+
+c_tot_fixed<-country_totals%>%
+  pivot_longer(c('2016', '2017', '2018'),
+               names_to = "year",
+               values_to = "amount")%>%
+  mutate(country_n = case_when(
+    country=="EL" ~ "Greece",
+    country=="UK" ~ "UK",
+    T ~ country_name))%>%
+  select(-country_name)
+
+```
+
+```{r regrouping}
+#dropped "Other"
+#specified year=2018
+v_1<-c_tot_fixed%>%
+  filter(type != "Other", year == 2018)%>%
+  mutate(energy_type=fct_collapse(type,
+                      clean=c("Hydro","Pumped hydro power", "Wind","Solar","Geothermal"),
+                      not_clean=c("Conventional thermal","Nuclear")))%>%
+  select(-type,-level,-country)
+
+#an ugly way to get the data frame I wanted...
+v_2<-v_1%>%
+  group_by(energy_type,
+           country_n)%>%
+  summarise(total=sum(amount))
+
+v_3<-v_2%>%
+  arrange(country_n)%>%
+  pivot_wider(names_from = energy_type,
+              values_from = total)%>%
+  mutate(prop_clean = clean/(clean+not_clean),
+         prop_not_clean = (1-prop_clean))%>%
+  select(-clean,-not_clean)
+```
+
+```{r}
+pop%>%
+  filter(Location=="United Kingdom")
+```
+
+
+
+```{r}
+#load population data
+pop<-read_csv("/Users/joshuayamamoto/test/WPP2019_TotalPopulationBySex.csv")
+
+new_pop<-pop%>%
+  mutate(Location_1= case_when(Location=="United Kingdom" ~ "UK",
+                               T ~ Location), PopTotal=PopTotal*1000)%>%
+  filter(Location_1 %in% v_3$country_n, Time==2018)%>%
+  select(Location_1, PopTotal)
+
+final_df<-new_pop%>%
+  left_join(v_3, by = c("Location_1"="country_n"))
+```
+
+```{r}
+#bivariate
+data<-bi_class(final_df, x = prop_clean, y = PopTotal, style = "quantile", dim = 3)
+```
+
+```{r}
+#map
+world <- map_data("world")
+
+worldmap <- ggplot() + theme(
+  panel.background = element_rect(fill = "white",
+                                  color = NA),
+  panel.grid = element_blank(),
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank(),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank()
+)
+
+
+map_europe <-world%>%
+  inner_join(data, by = c("region"="Location_1"))
+```
+
+
+```{r}
+europe <- worldmap + 
+  coord_fixed(xlim = c(-37, 62.5),
+              ylim = c(31, 70),
+              ratio = 1.5)
+
+
+europe2 <- europe +
+  geom_polygon(data = map_europe,
+               aes(fill= bi_class,
+                   x = long,
+                   y = lat,
+                   group = group),
+                   color = "black",
+                   size = 0.1) +
+  bi_scale_fill(pal = "DkViolet",
+                dim = 3,
+                guide = F) +
+  scale_x_continuous(breaks = NULL) + 
+  scale_y_continuous(breaks = NULL) +
+  geom_richtext(aes(x = -24, y = 62,
+                    label = "What Percent of Energy <br> was <span style='color:#AE3A4E;'>**Clean**</span> in European <br>                                Countries in 2018?"),
+                    family="Times",
+                    color ="black",
+                    size=5.0,
+                    fill = NA,
+                    label.color = NA)+
+  geom_richtext(aes(x = 42, y = 58,
+                    label = "<span style='color:#4885C1;'>**Blue** Countries </span> have <br> low levels of clean energy <br>                             and a large population"),
+                    family =  "Times",
+                    color = "black",
+                    size = 3,
+                    fill = NA,
+                    label.color = NA)+
+  geom_curve(aes(x = 42, y = 55.3, xend = 35.9, yend = 52.5 ),
+             size = 0.17,
+             curvature = -0.3)+
+  geom_richtext(aes(x = 54, y = 47.5,
+                    label = "<span style='color:#3F2949;'>**Dark Violet** Countries </span> have <br> high levels of clean                              energy <br> and a large population"),
+                    family =  "Times",
+                    color = "black",
+                    size = 3,
+                    fill = NA,
+                    label.color = NA)+
+  geom_curve(aes(x = 45, y = 46.5, xend = 30, yend = 44.5),
+             size = 0.2,
+             curvature = -0.32)+
+  theme(plot.background = element_blank())
+        #plot.title = element_text(colour = "black", family = "Futura Medium", margin = unit(c(0,0,1,0),"cm")))
+        
+
+legend_europe <- 
+  bi_legend(pal = "DkViolet",
+            dim = 3,
+            xlab = "% Clean Energy",
+            ylab = "Population",
+            size = 7)
+
+map_legend_europe <- ggdraw() +
+  draw_plot(europe2, 0, 0, 1, 1) +
+  draw_plot(legend_europe, 0.063, 0.4, 0.18, 0.18)
+
+map_legend_europe
+```
+
+```{r}
+ggsave("map_legend_europe.pdf", map_legend_europe, width = 10, height = 7)
+```
+
+
