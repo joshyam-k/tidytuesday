@@ -1,0 +1,142 @@
+---
+title: "tidyavatar"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tokenizers)
+library(tidytext)
+library(tvthemes)
+library(extrafont)
+library(cowplot)
+library(ggwordcloud)
+library(ggpubr)
+library(grid)
+```
+
+```{r}
+font_import()
+```
+
+```{r}
+loadfonts()
+```
+
+
+```{r}
+avatar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/avatar.csv')
+scene_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/scene_description.csv')
+
+```
+```{r}
+avatar$full_text[3]
+```
+
+
+
+
+```{r}
+katara_talking_to_aang <-
+  avatar %>%
+  filter(character == "Katara") %>%
+  filter(str_detect(character_words, "Aang")) %>%
+  tidytext::unnest_tokens(word, character_words)
+
+aang_talking_to_katara <-
+  avatar %>%
+  filter(character == "Aang") %>%
+  filter(str_detect(character_words, "Katara")) %>%
+  tidytext::unnest_tokens(word, character_words)
+```
+
+
+```{r}
+`%notin%` <- Negate(`%in%`)
+filler_words <- c("and", "the", "a", "to", "is", "it", "of", "in", "it's", "that", "i'm", "so", "katara","aang", "aang's","katara's", "but", "are", "for", "on")
+
+aang_words<-
+  aang_talking_to_katara %>%
+    filter(word %notin% filler_words) %>%
+    count(word, sort = TRUE) %>%
+    filter(n > 5)
+
+katara_words <-
+  katara_talking_to_aang %>%
+    filter(word %notin% filler_words) %>%
+    count(word, sort = TRUE) %>%
+    filter(n > 5)
+```
+
+
+
+
+
+
+
+
+
+```{r}
+set.seed(42)
+
+katplot<-katara_words %>%
+  slice(1:30) %>%
+ggplot(aes(label = word,
+           size = n))+
+  geom_text_wordcloud_area(shape = "circle",
+                           family = "SF Alien Encounters Solid") +
+  scale_size_area(max_size = 5)+
+  theme(panel.background = element_rect(fill = "transparent",
+                                        color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                       color = NA))
+
+aangplot<-aang_words %>%
+  ggplot(aes(label = word,
+             size = n))+
+  geom_text_wordcloud_area(shape = "circle",
+                           family = "SF Alien Encounters Solid") +
+  scale_size_area(max_size = 9)+
+  theme(panel.background = element_rect(fill = "transparent",
+                                        color = NA),
+        plot.background = element_rect(fill = "transparent",
+                                      color = NA))
+  
+
+```
+
+
+
+```{r}
+my_grob <- grobTree(textGrob("What words do Aang and Katara use most often \n when referencing each other?",
+                             x = 0.55, y = 0.15,
+                             gp = gpar(col = "darkslategrey",
+                                       fontsize = 12,
+                                       fontfamily = "SF Alien Encounters Solid")))
+
+title<-ggplot(avatar, aes(x = book_num, y = imdb_rating))+
+  annotation_custom(my_grob)+
+  theme(plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+```
+
+
+```{r}
+final<-ggdraw()+
+  draw_image("/Users/joshuayamamoto/Desktop/Screen Shot 2020-08-11 at 11.27.36 AM.png", 0, 0, 1, 1)+
+  draw_plot(katplot, 0.67, 0.54, 0.21, 0.21)+
+  draw_plot(aangplot, 0.202, 0.46, 0.21, 0.21)+
+  draw_plot(title, 0, 0, 1 ,1)
+```
+
+```{r}
+ggsave("tidyavatar.png", final)
+```
+
+
