@@ -1,0 +1,155 @@
+---
+title: "tidychopped"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(extrafont)
+library(ggtext)
+library(cowplot)
+```
+
+```{r}
+font_import()
+```
+
+```{r}
+loadfonts()
+```
+
+
+```{r}
+chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+```
+
+```{r}
+chopped <- chopped %>%
+  drop_na(episode_rating) %>%
+  filter(season <= 40)
+```
+
+
+```{r}
+chopped_avg <- chopped %>%
+  select(1:4) %>%
+  group_by(season) %>%
+  mutate( season_rating = mean(episode_rating),
+          episode_mod = series_episode + (45*season), #start 45
+          mid = mean(episode_mod)) %>%
+  ungroup() %>%
+  mutate(season = factor(season))
+
+
+chopped_lines <- chopped_avg %>%
+  group_by(season) %>%
+  summarise(start_x = min(episode_mod) - 23,
+            end_x = max(episode_mod) + 23,
+            y = unique(season_rating)) %>%
+  pivot_longer(cols = c(start_x, end_x),
+    names_to = "type",
+    values_to = "x") %>% 
+  mutate(
+    x_group = if_else(type == "start_x", x + .1, x - .1),
+    x_group = if_else(type == "start_x" & x == min(x), x_group - .1, x_group),   # this bit of code comes from @CedScherer
+    x_group = if_else(type == "end_x" & x == max(x), x_group + .1, x_group)
+  )
+```
+
+
+
+
+```{r plot, fig.width = 18, fig.height = 9}
+main <- ggplot(chopped_avg,
+       aes(x = episode_mod, y = episode_rating))+
+  geom_point(size = 2)+
+  geom_hline(data = tibble(y = 6:10),
+               aes(yintercept = y),
+               color = "grey82",
+               size = .5)+
+  geom_segment(aes(xend = episode_mod,
+                     yend = season_rating, 
+                     color = season),
+               linetype = 2)+
+  geom_line(data = chopped_lines,
+              aes(x, y),
+              color = "grey40") +
+  geom_line(data = chopped_lines,
+              aes(x_group, y, 
+                  color = season),
+              size = 2.5)+
+  labs(y = "Rating", title = "How do the IMDb ratings for Chopped vary by season?")+
+  theme(legend.position = "false",
+        plot.background = element_rect(fill = "#faf7eb", color = "#faf7eb"),
+        panel.background = element_rect(fill = NA, color = NA),
+        panel.border = element_rect(fill = NA, color = NA),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(size = 60, family = "Futura Medium", margin = margin(35,0,30,0)),
+        axis.text.y = element_text(size = 27, family = "Futura Medium"),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 39, family = "Futura Medium", margin = margin(0,20,0,20)))+
+  geom_richtext(x = 1460, y = 5.95,
+                label = "This episode was titled <br> 'Worst Cooks Challange' <br> and featured previous <br>  winners of  the show: <br> Worst Cooks in America",
+                size = 8,
+                color ="#707173",
+                fill = NA,
+                family = "Futura Medium",
+                label.color = NA)
+```
+
+
+
+
+
+```{r}
+knife <- data.frame(
+  x = c(-30, -10, -9.4, -9, -9, -20, -20, -30), 
+  y = c(20, 20, 19.8, 19.3, 15, 15, 18.6, 18.6),
+  color = "#E0E0E0"
+  )
+
+knife1 <- ggplot(knife, aes(x, y))+
+  geom_polygon()+
+  xlim(-30,-9)+
+  ylim(10,20)+
+  theme(plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+  
+```
+
+
+
+```{r}
+final <- ggdraw()+
+  draw_plot(main, 0,0,1,1)+
+  draw_plot(knife1,0.65,0.88, 0.09, 0.09 )
+```
+
+
+```{r, fig.width = 18, fig.height = 9}
+final
+```
+
+
+
+
+
+
+
+
+
+
+
+
