@@ -1,0 +1,44 @@
+---
+title: "tidyhiking"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 48)
+
+hike_data <- tuesdata$hike_data
+```
+
+```{r}
+# clean length column
+
+hike_data <- 
+  hike_data %>%
+  separate(length, into = c("length", "type"), sep = "miles") %>%
+  mutate(type = str_replace(type, ", ", ""))
+
+```
+
+```{r}
+# clean location column
+
+hike_data <-
+  hike_data %>%
+  separate(location, into = c("region", "specifics"), sep = "--", fill = "right")
+
+```
+
+
+
+
+
+
+
+
+
