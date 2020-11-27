@@ -32,6 +32,22 @@ hike_data <-
 
 ```
 
+```{r}
+hike_data <- hike_data %>%
+  mutate(length = as.double(as.character(length)),
+         gain = as.double(as.character(gain)),
+         highpoint = as.double(as.character(highpoint)),
+         rating = as.double(as.character(rating))) %>%
+  filter(gain < 10000)
+
+```
+
+
+```{r}
+ggplot(hike_data,
+       aes(gain, highpoint, color = type)) +
+  geom_jitter(alpha = 0.3)
+```
 
 
 
