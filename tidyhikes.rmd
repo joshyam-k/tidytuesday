@@ -17,7 +17,6 @@ hike_data <- tuesdata$hike_data
 
 ```{r}
 # clean length column
-
 hike_data <- 
   hike_data %>%
   separate(length, into = c("length", "type"), sep = "miles") %>%
@@ -27,7 +26,6 @@ hike_data <-
 
 ```{r}
 # clean location column
-
 hike_data <-
   hike_data %>%
   separate(location, into = c("region", "specifics"), sep = "--", fill = "right")
