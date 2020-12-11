@@ -1,0 +1,96 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(glue)
+library(rvest)
+```
+
+# Data scraping practice
+
+```{r}
+# main url
+urls_list <- "https://github.com/WSJ/measles-data/tree/master/individual-states"
+
+# reading the html
+url_read <- read_html(urls_list)
+
+# creating a tibble of the state names
+states <- 
+  url_read %>%
+  html_nodes(".link-gray-dark") %>%
+  html_text() %>%
+  as_tibble() 
+
+# cleaning the tibble to just be the state name and pulling those names
+states <- 
+  states %>%
+  mutate(id = row_number())%>%
+  filter(id > 10) %>%
+  select(value) %>%
+  mutate(value = str_remove(value, "\\.csv")) %>%
+  pull(value)
+
+# using glue to create a vector of the links and then using map to read each csv
+all_urls <- glue("https://raw.githubusercontent.com/WSJ/measles-data/master/individual-states/{states}.csv") %>%
+  map(read_csv)
+
+# selecting certain variables and binding all of the tibbles
+clean_states <- 
+  all_urls %>%
+  map(~select(., state, name, lat, lng)) %>%
+  map(~mutate_at(., vars(lat, lng), as.numeric)) %>%
+  bind_rows() %>%
+  filter(!is.na(lat))
+
+
+# measles data
+wsj <- read_csv("https://raw.githubusercontent.com/WSJ/measles-data/master/all-measles-rates.csv")
+
+# join
+# we ended up with more rows which likely means that the key was not distinct in wsj
+wsj_final <- wsj %>%
+  left_join(clean_states, by = c("name", "state"))
+
+# lets look at that
+clean_states %>%
+  count(name,state) %>%
+  filter(n > 1)
+
+# this isn't great, there seems to be almost 2000 state ~ name combinations that are multiple occurences
+# i just realized its because there are multiple years for which there are measurements
+
+```
+
+```{r}
+# an awesome way to look at how much data you have by category
+wsj_final %>%
+  summarise(across(everything(), ~ mean(!is.na(.)))) %>%
+  gather() %>%
+  View()
+
+# district, xrel, xper, xmed have very little data and dont seem incredibly interesting to me
+
+wsj_final <-
+  wsj_final %>%
+  select(-district, -xrel, -xper, -xmed) %>%
+  filter(!is.na(year))
+
+
+# used separate rows on year to get discrete variables
+wsj_final <-
+  wsj_final %>%
+  separate_rows(year, sep = "-") %>%
+  mutate(year = case_when(year == 18 ~ "2018",
+                          year == 19 ~ "2019",
+                          T ~ year)) %>%
+  mutate(year = as.double(year))
+```
+
+
+
