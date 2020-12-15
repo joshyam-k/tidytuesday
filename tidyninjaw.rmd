@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
 library(plyr)
+# plyr masks count
 ```
 
 ```{r}
@@ -45,8 +46,6 @@ ninja_lump <- ninja %>%
 ```
 
 ```{r}
-ninja_lump %>%
-  dplyr::count(obstacle_order, sort = T) %>%
-  View()
+
 ```
 
