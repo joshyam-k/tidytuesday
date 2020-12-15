@@ -45,7 +45,10 @@ ninja_lump <- ninja %>%
 
 ```
 
-```{r}
 
-```
+maybe look at most common obstacles by
+ * location
+ * round_stage
 
+also most common locations for 
+ * round_stage
