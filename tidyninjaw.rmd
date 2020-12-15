@@ -1,0 +1,52 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+library(plyr)
+```
+
+```{r}
+# loading and cleaning -----------------------------
+
+data <- tt_load(2020, week = 51)
+
+ninja <- data$ninja_warrior
+
+# turning the 3 locations within Japan to just Japan
+ninja_lump <- ninja %>%
+  mutate(
+    location = fct_other(
+      factor(location),
+      drop = c("Sasuke 23 (Japan)", "Sasuke 26 (Japan)", "Sasuke 27 (Japan)"),
+      other_level = "Japan"
+      )
+    ) %>%
+  mutate(
+    round_stage = fct_other(
+      factor(round_stage),
+      drop = c("Qualifying (Regional/City)", "Qualifying"),
+      other_level = "Qualifying"
+      )
+    ) %>%
+  mutate(
+    round_stage = revalue(
+      round_stage,
+      c("Finals (Regional/City)" = "Finals")
+      )
+    ) %>%
+  mutate(obstacle_name = fct_lump_min(obstacle_name, 4))
+
+
+```
+
+```{r}
+ninja_lump %>%
+  dplyr::count(obstacle_order, sort = T) %>%
+  View()
+```
+
