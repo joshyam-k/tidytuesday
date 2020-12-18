@@ -53,21 +53,50 @@ cocktails_v3 <-
 # you can highlight text and press " and it puts it in quotes!
 
 cocktails_v3 %>%
-  filter(str_detect(measure, " oz")) %>%  # I have a space here to avoid things like fr`oz`en
+   # I have a space here to avoid things like frozen
+  filter(str_detect(measure, " oz")) %>% 
   count(measure, sort = T) %>%
+  # i was annoyed with writing a regex for patterns with / in it so i just replaced all / with sl
   mutate(measure = str_replace(measure, "/", " sl "),
          measure = str_to_lower(measure),
+         # this was an abnormal entry so I changed it by hand
          measure = str_replace(measure, "70ml sl 2fl oz", "2 oz")) %>%
+  # here is a horrible regex, but it gets the job done!
   extract(
     measure,
     into = c("amount", "unit", "extra"),
     regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(oz)(\\s[a-z].*)?"
     ) %>%
+  # changing sl back to /
   mutate(amount = str_replace(amount, " sl ", "/")) %>% 
+  # separating the amount column into two parts, to deal with fractions individually
+  separate(amount, into = c("num","frac"), sep = " ") %>%
+  # changed the frac column to doubles 
+  mutate(frac = sapply(frac, function(x) eval(parse(text=as.character(x))))) %>%
+  # i hand changed the fractions in num because there were entries like 2-3 
+  # there's definitely a better way to do this, but this works fine for this small exercise
+  mutate(num = case_when(num == "1/2" ~ "0.5",
+                         num == "3/4" ~ "0.75",
+                         num == "1/3" ~ "0.33",
+                         num == "1/4" ~ "0.25",
+                         num == "2/3" ~ "0.66",
+                         T ~ num)
+         ) %>%
+  mutate(frac = str_replace(frac, "NULL", "0"),
+         frac = as.double(frac),
+         # a way to deal with - and adding up fractions
+         amount = case_when(str_detect(num, "-") ~ num,
+                            T ~ as.character((as.double(num) + frac)))
+         ) %>% 
+  select(-num, -frac) %>%
+  # just arranging variables in a nice way
+  select(amount, unit, extra, n) %>% 
   View()
 
- 
-# function for fraction fixing
+
+
+# 1/2. 3/4, 1/3, 1/4, 2/3
+
 
                                        
 ```
