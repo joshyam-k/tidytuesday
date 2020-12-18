@@ -47,7 +47,28 @@ cocktails_v3 <-
 
 # cleaning measure
 
-#id like an `amount` and `unit` column, but it is veryyyy messy
+# id like an `amount` and `unit` column, but it is veryyyy messy
+# it looks like we need 3 columns total, the two aforementioned and a either `TRUE` to indicate original
+# ingredient, or if its another ingredient
+# you can highlight text and press " and it puts it in quotes!
+
+cocktails_v3 %>%
+  filter(str_detect(measure, " oz")) %>%  # I have a space here to avoid things like fr`oz`en
+  count(measure, sort = T) %>% 
+  # separating by oz here works because we filtered earlier to only include observations with oz
+  separate(measure, into = c("num", "unit", "extra"), sep = "oz", remove = F) %>%  
+  separate(num, into = c("first", "second"), sep = " ") %>%
+  mutate(first = str_replace(first, "^70", "2"),
+         first = str_replace(first, "add", "0"),
+         first = str_replace())
+  mutate(second = sapply(second, function(x) eval(parse(text = as.character(x)))),
+         second = str_replace(second, "NULL", "0"),
+         first = sapply(first, function(x) eval(parse(text = as.character(x))))) %>% 
+  #mutate(num = str_replace(num, " ", "+"),
+  #       num = str_remove(num, "\\+$")) %>% 
+  View()
+
+`# command right arrow takes you to end of line
 
                                        
 ```
