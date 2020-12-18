@@ -1,0 +1,54 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 22)
+
+cocktails_raw <- tuesdata$cocktails
+```
+
+```{r}
+# cleaning glass
+
+cocktails_v1 <- 
+  cocktails_raw %>%
+  mutate(glass = str_to_lower(glass),
+         glass = str_replace_all(glass, " ", "_"),
+         # looks like there is a margarita/coupette and margarita
+         glass = str_replace(glass, "margarita/coupette_glass", "margarita_glass")) %>%
+  select(-date_modified, -drink_thumb, -iba, -video)
+
+# cleaning alcoholic
+
+cocktails_v2 <-
+  cocktails_v1 %>% 
+  mutate(alcoholic = str_to_lower(alcoholic),
+         alcoholic = str_replace_all(alcoholic, " ", "_"),
+         # just changed the NA's to unknown to keep data full
+         alcoholic = replace_na(alcoholic, "unknown"))
+
+# cleaning ingredient
+
+# had 333 different ingredients before
+# had 306 after, so we cleaned up some discrepancy which is good
+cocktails_v3 <-
+  cocktails_v2 %>%
+  mutate(ingredient = str_to_lower(ingredient),
+         ingredient = str_replace_all(ingredient, " ", "_")) 
+
+# cleaning measure
+
+#id like an `amount` and `unit` column, but it is veryyyy messy
+
+                                       
+```
+
