@@ -54,21 +54,20 @@ cocktails_v3 <-
 
 cocktails_v3 %>%
   filter(str_detect(measure, " oz")) %>%  # I have a space here to avoid things like fr`oz`en
-  count(measure, sort = T) %>% 
-  # separating by oz here works because we filtered earlier to only include observations with oz
-  separate(measure, into = c("num", "unit", "extra"), sep = "oz", remove = F) %>%  
-  separate(num, into = c("first", "second"), sep = " ") %>%
-  mutate(first = str_replace(first, "^70", "2"),
-         first = str_replace(first, "add", "0"),
-         first = str_replace())
-  mutate(second = sapply(second, function(x) eval(parse(text = as.character(x)))),
-         second = str_replace(second, "NULL", "0"),
-         first = sapply(first, function(x) eval(parse(text = as.character(x))))) %>% 
-  #mutate(num = str_replace(num, " ", "+"),
-  #       num = str_remove(num, "\\+$")) %>% 
+  count(measure, sort = T) %>%
+  mutate(measure = str_replace(measure, "/", " sl "),
+         measure = str_to_lower(measure),
+         measure = str_replace(measure, "70ml sl 2fl oz", "2 oz")) %>%
+  extract(
+    measure,
+    into = c("amount", "unit", "extra"),
+    regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(oz)(\\s[a-z].*)?"
+    ) %>%
+  mutate(amount = str_replace(amount, " sl ", "/")) %>% 
   View()
 
-`# command right arrow takes you to end of line
+ 
+# function for fraction fixing
 
                                        
 ```
