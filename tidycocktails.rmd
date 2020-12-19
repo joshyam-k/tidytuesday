@@ -89,8 +89,9 @@ cleaned_oz <-
                             T ~ as.character((as.double(num) + frac)))
          ) %>% 
   select(-num, -frac) %>%
+  select(row_id:ingredient, amount, unit, extra)  
   # just arranging variables in a nice way
-  mutate(amount = as.double(amount))
+
 
 
 # clean shots
@@ -99,16 +100,104 @@ cleaned_shot <- cocktails_v3 %>%
   filter(str_detect(measure, " shot")) %>% 
   mutate(measure = str_to_lower(measure)) %>% 
   # even though it leaves some grammatical errors, i'm going to change all shots to shot for consistency
-  mutate(measure = str_replace(measure, "shots", "shot")) %>% 
+  mutate(measure = str_replace(measure, "shots", "shot"),
+         measure = str_replace(measure, "/", " sl ")) %>% 
   extract(
     measure,
     into = c("amount", "unit", "extra"),
     regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(shot)(\\s[a-z].*)?"
     ) %>%
-  mutate(amount = as.double(amount))
+  mutate(amount = str_replace(amount, " sl ", "/")) %>% 
+  separate(amount, into = c("num","frac"), sep = " ") %>%
+  mutate(frac = sapply(frac, function(x) eval(parse(text=as.character(x))))) %>%
+  mutate(num = case_when(num == "1/2" ~ "0.5",
+                         num == "3/4" ~ "0.75",
+                         num == "1/3" ~ "0.33",
+                         num == "1/4" ~ "0.25",
+                         num == "1/8" ~ "0.125",
+                         T ~ num)
+         ) %>%
+  mutate(frac = str_replace(frac, "NULL", "0"),
+         frac = as.double(frac),
+         # a way to deal with - and adding up fractions
+         amount = case_when(str_detect(num, "-") ~ num,
+                            T ~ as.character((as.double(num) + frac)))
+         ) %>% 
+  select(-num, -frac) %>%
+  select(row_id:ingredient, amount, unit, extra)
 
 
+# clean tsp
+
+clean_tsp <-
+  cocktails_v3 %>% 
+  filter(str_detect(measure, "tsp")) %>% 
+  mutate(measure = str_to_lower(measure),
+         measure = str_replace(measure, "/", " sl ")) %>%
+  extract(
+    measure,
+    into = c("amount", "unit", "extra"),
+    regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(tsp)(\\s[a-z].*)?"
+    ) %>%
+  mutate(amount = str_replace(amount, " sl ", "/")) %>% 
+  separate(amount, into = c("num","frac"), sep = " ") %>%
+  mutate(frac = sapply(frac, function(x) eval(parse(text=as.character(x))))) %>% 
+  mutate(num = case_when(num == "1/2" ~ "0.5",
+                         num == "3/4" ~ "0.75",
+                         num == "1/3" ~ "0.33",
+                         num == "1/4" ~ "0.25",
+                         num == "1/8" ~ "0.125",
+                         T ~ num)
+         ) %>%
+  mutate(frac = str_replace(frac, "NULL", "0"),
+         frac = as.double(frac),
+         # a way to deal with - and adding up fractions
+         amount = case_when(str_detect(num, "-") ~ num,
+                            T ~ as.character((as.double(num) + frac)))
+         ) %>% 
+  select(-num, -frac) %>%
+  select(row_id:ingredient, amount, unit, extra) 
+
+# clean cup measures
+
+clean_cup <-
+  cocktails_v3 %>% 
+  filter(str_detect(measure, " cup")) %>%
+  mutate(measure = str_to_lower(measure),
+         measure = str_replace(measure, "/", " sl ")) %>%
+  extract(
+    measure,
+    into = c("amount", "unit", "extra"),
+    regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(cup)(\\s[a-z].*)?"
+    ) %>%
+  mutate(amount = str_replace(amount, " sl ", "/")) %>% 
+  separate(amount, into = c("num","frac"), sep = " ") %>%
+  mutate(frac = sapply(frac, function(x) eval(parse(text=as.character(x))))) %>% 
+  mutate(num = case_when(num == "1/2" ~ "0.5",
+                         num == "3/4" ~ "0.75",
+                         num == "1/3" ~ "0.33",
+                         num == "1/4" ~ "0.25",
+                         num == "1/8" ~ "0.125",
+                         T ~ num)
+         ) %>%
+  mutate(frac = str_replace(frac, "NULL", "0"),
+         frac = as.double(frac),
+         # a way to deal with - and adding up fractions
+         amount = case_when(str_detect(num, "-") ~ num,
+                            T ~ as.character((as.double(num) + frac)))
+         ) %>% 
+  select(-num, -frac) %>%
+  select(row_id:ingredient, amount, unit, extra)
+
+# fixing blank measure
 cocktails_v3 %>%
+  mutate(measure = case_when(measure == "\n" ~ "blank",
+                             T ~ measure)) %>% 
+  filter(str_detect(measure, "blank")) %>% 
+  rename(amount = measure) %>% 
+  mutate(unit = "\n", extra = "\n", amount = "\n") %>% 
+  View()
+  
                                        
 ```
 
