@@ -52,10 +52,10 @@ cocktails_v3 <-
 # ingredient, or if its another ingredient
 # you can highlight text and press " and it puts it in quotes!
 
-cocktails_v3 %>%
+cleaned_oz <-
+  cocktails_v3 %>%
    # I have a space here to avoid things like frozen
   filter(str_detect(measure, " oz")) %>% 
-  count(measure, sort = T) %>%
   # i was annoyed with writing a regex for patterns with / in it so i just replaced all / with sl
   mutate(measure = str_replace(measure, "/", " sl "),
          measure = str_to_lower(measure),
@@ -90,14 +90,25 @@ cocktails_v3 %>%
          ) %>% 
   select(-num, -frac) %>%
   # just arranging variables in a nice way
-  select(amount, unit, extra, n) %>% 
-  View()
+  mutate(amount = as.double(amount))
 
 
+# clean shots
 
-# 1/2. 3/4, 1/3, 1/4, 2/3
+cleaned_shot <- cocktails_v3 %>% 
+  filter(str_detect(measure, " shot")) %>% 
+  mutate(measure = str_to_lower(measure)) %>% 
+  # even though it leaves some grammatical errors, i'm going to change all shots to shot for consistency
+  mutate(measure = str_replace(measure, "shots", "shot")) %>% 
+  extract(
+    measure,
+    into = c("amount", "unit", "extra"),
+    regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(shot)(\\s[a-z].*)?"
+    ) %>%
+  mutate(amount = as.double(amount))
 
 
+cocktails_v3 %>%
                                        
 ```
 
