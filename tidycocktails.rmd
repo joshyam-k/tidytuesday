@@ -198,6 +198,50 @@ cocktails_v3 %>%
   mutate(unit = "\n", extra = "\n", amount = "\n") %>% 
   View()
   
-                                       
+# parts
+
+clean_part <-
+  cocktails_v3 %>%
+  mutate(measure = str_replace(measure, "parts", "part")) %>%
+  filter(str_detect(measure, " part")) %>% 
+  mutate(measure = str_to_lower(measure),
+         measure = str_replace(measure, "/", " sl ")) %>%
+  extract(
+    measure,
+    into = c("amount", "unit", "extra"),
+    regex = "([0-9]\\.?-?[0-9]?[0-9]?\\s?[0-9]?\\s?s?l?\\s?[1-9]?\\s?[1-9]?[0-9]?)(part)(\\s[a-z].*)?"
+    ) %>%
+  mutate(amount = str_replace(amount, " sl ", "/")) %>% 
+  separate(amount, into = c("num","frac"), sep = " ") %>%
+  mutate(frac = sapply(frac, function(x) eval(parse(text=as.character(x))))) %>% 
+  mutate(num = case_when(num == "1/2" ~ "0.5",
+                         num == "3/4" ~ "0.75",
+                         num == "1/3" ~ "0.33",
+                         num == "1/4" ~ "0.25",
+                         num == "2/3" ~ "0.66",
+                         T ~ num)
+         ) %>%
+  mutate(frac = str_replace(frac, "NULL", "0"),
+         frac = as.double(frac),
+         # a way to deal with - and adding up fractions
+         amount = case_when(str_detect(num, "-") ~ num,
+                            T ~ as.character((as.double(num) + frac)))
+         ) %>% 
+  select(-num, -frac) %>%
+  select(row_id:ingredient, amount, unit, extra)
+
+
+
+# reference
+cocktails_v3 %>% 
+  filter(!str_detect(measure, " oz")) %>% 
+  filter(!str_detect(measure, " tsp")) %>% 
+  filter(!str_detect(measure, " shot")) %>%
+  filter(!str_detect(measure, " cup")) %>% 
+  filter(!str_detect(measure, "\n")) %>% 
+  filter(!str_detect(measure, "part")) %>% 
+  filter(!str_detect(measure, "parts")) %>% 
+  count(measure, sort = T) %>% 
+  View()                               
 ```
 
