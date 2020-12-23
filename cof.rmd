@@ -1,0 +1,27 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+```
+
+```{r}
+tuesdata <- tt_load(2020, week = 28)
+
+coffee_ratings <- tuesdata$coffee_ratings %>% 
+  select(-lot_number)
+```
+
+```{r}
+coffee_ratings %>% 
+  summarise(across(everything(),~ mean(!is.na(.)))) %>% 
+  gather() %>% 
+  View()
+```
+
+
