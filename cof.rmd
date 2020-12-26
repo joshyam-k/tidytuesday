@@ -8,20 +8,66 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(janitor)
 library(tidytuesdayR)
+library(scales)
 ```
 
 ```{r}
-tuesdata <- tt_load(2020, week = 28)
+tuesdata <- tt_load(2020, week = 41)
 
-coffee_ratings <- tuesdata$coffee_ratings %>% 
-  select(-lot_number)
+ncaa <- tuesdata$tournament
+
 ```
 
 ```{r}
-coffee_ratings %>% 
+ncaa %>% 
   summarise(across(everything(),~ mean(!is.na(.)))) %>% 
   gather() %>% 
   View()
 ```
+
+```{r}
+ncaa %>% 
+  count(year) %>% 
+  ggplot(aes(x = year, y = n)) +
+  geom_col()
+
+# lets look at post 1994
+
+finish_levels <- c("1st", "2nd", "RSF", "RF", "NSF", "N2nd", "Champ")
+
+ncaa <- ncaa %>% 
+  filter(year > 1993) %>% 
+  mutate(tourney_finish = fct_relevel(tourney_finish, finish_levels))
+
+
+```
+
+```{r}
+ncaa %>% 
+  count(seed,tourney_finish) %>% 
+  group_by(seed) %>% 
+  mutate(pct = n / sum(n)) %>% 
+  ggplot(aes(tourney_finish, seed, fill = pct)) +
+  geom_tile() +
+  geom_text(aes(label = percent(pct, accuracy = 0.1))) +
+  scale_fill_gradient2(low = "white", high = "midnightblue", labels = percent ) +
+  scale_y_continuous(breaks = seq(1,16), expand = c(0,0)) +
+  scale_x_discrete(expand = c(0,0)) +
+  theme_minimal() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Tournament Finish", 
+       y = "Starting Seed",
+       fill = "% of seed")
+```
+
+
+
+
+
+
+
+
+
+
 
 
