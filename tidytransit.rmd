@@ -1,0 +1,68 @@
+---
+title: "tidytransit"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+```
+
+```{r}
+data <- tt_load(2021, week = 2)
+
+transit <- data$transit_cost %>% 
+  select(-reference, -source1, -source2)
+  
+```
+
+```{r}
+# exploration
+
+count(transit, country, sort = T) # looks like there are 57 countries total
+
+count(transit, start_year) # 67 NAs, earliest 1982, latest 2025 (must be planning)
+
+count(transit, end_year, sort = T) # 71 NAs, earliest 1987, latest 2030
+
+transit %>% 
+  filter(
+    is.na(start_year),
+    is.na(end_year)
+    ) # looks like there are 59 occurences of both start and end year missing
+
+## I think for the remaining cases where just one year is missing, i'll try to impute the missing data
+
+count(transit, year, sort = T) 
+# wonderfully we have no missing data for the midpoint of the project
+# so we can fix some of the NA's just with that
+
+
+```
+
+```{r}
+## fixing missing year data
+
+cols <- c("start_year","end_year")
+transit[cols] <- sapply(transit[cols], as.numeric)
+
+# when start year is missing but end year is not
+
+transit1 <- transit %>% 
+  filter(is.na(start_year), !is.na(end_year)) %>% 
+  mutate(diff = end_year -year) %>% 
+  mutate(start_year = year - diff)
+
+# when end year is missing but start year is not
+
+transit2 <- transit %>% 
+  filter(!is.na(start_year), is.na(end_year)) %>%
+  select(start_year, end_year, year) %>% 
+  mutate(diff = year - start_year) %>%  
+  mutate(end_year = year - diff) # any of these appear to be shorter than 1 year projects, wow!
+
+
+
+```
+
