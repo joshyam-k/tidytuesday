@@ -41,6 +41,8 @@ count(transit, year, sort = T)
 
 ```
 
+
+
 ```{r}
 ## fixing missing year data
 
@@ -52,17 +54,57 @@ transit[cols] <- sapply(transit[cols], as.numeric)
 transit1 <- transit %>% 
   filter(is.na(start_year), !is.na(end_year)) %>% 
   mutate(diff = end_year -year) %>% 
-  mutate(start_year = year - diff)
+  mutate(start_year = year - diff) %>% 
+  select(-diff)
 
 # when end year is missing but start year is not
 
 transit2 <- transit %>% 
   filter(!is.na(start_year), is.na(end_year)) %>%
-  select(start_year, end_year, year) %>% 
   mutate(diff = year - start_year) %>%  
-  mutate(end_year = year - diff) # any of these appear to be shorter than 1 year projects, wow!
+  mutate(end_year = year - diff) %>%  # any of these appear to be shorter than 1 year projects, wow!
+  select(- diff)
+  
+transit %>% 
+  filter(!is.na(start_year), !is.na(end_year)) %>% 
+  mutate(diff = end_year - start_year) %>% 
+  select(start_year, end_year, diff) %>% 
+  summarise(diff = median(diff)) 
+  # median diff is 5, so I'll use that for the 59 missing ones
 
+transit3 <- transit %>% 
+  filter(is.na(start_year), is.na(end_year)) %>% 
+  mutate(diff = 5) %>% 
+  mutate(start_year = year - diff,
+         end_year = year + diff) %>% 
+  select(-diff)
 
+transit4 <- transit %>% 
+  filter(!is.na(start_year), !is.na(end_year))
+
+transit_final <- rbind(transit1, transit2, transit3, transit4)
 
 ```
+
+
+```{r}
+# the tunnel_per column has the % character but id rather just keep the variable as a double
+transit_final <- transit_final %>% 
+  mutate(tunnel_per = str_remove(tunnel_per, "%"),
+         tunnel_per = as.double(tunnel_per))
+
+
+# just to make sure that we didnt make any mistakes
+
+transit_final %>% 
+  count(tunnel_per, sort = T)
+
+transit %>% 
+  count(tunnel_per, sort = T)
+  
+```
+
+
+
+
 
