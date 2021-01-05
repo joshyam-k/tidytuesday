@@ -90,19 +90,52 @@ transit_final <- rbind(transit1, transit2, transit3, transit4)
 ```{r}
 # the tunnel_per column has the % character but id rather just keep the variable as a double
 transit_final <- transit_final %>% 
+  filter(!is.na(real_cost)) %>% 
   mutate(tunnel_per = str_remove(tunnel_per, "%"),
-         tunnel_per = as.double(tunnel_per))
+         tunnel_per = as.double(tunnel_per),
+         real_cost = as.double(real_cost))
 
 
-# just to make sure that we didnt make any mistakes
-
-transit_final %>% 
-  count(tunnel_per, sort = T)
-
-transit %>% 
-  count(tunnel_per, sort = T)
+transit_final <- transit_final %>% 
+  mutate(duration = end_year - start_year) %>% 
+  mutate(decade = year - (year %% 10)) %>% 
+  mutate(duration = case_when(duration == 0 ~ 0.5, T ~ duration))
   
 ```
+
+
+# plotting
+
+```{r}
+transit_final %>% 
+  filter(decade != 1980) %>% 
+  ggplot(aes(x = duration, y = log(real_cost))) +
+  geom_hex(bins = 10, alpha = 0.8) +
+  facet_wrap(~decade) +
+  theme_minimal() +
+  labs(x = "Duration in Years", y = "Logged Real Cost")
+```
+
+
+```{r}
+library(tidymodels)
+
+set.seed(0)
+initial <- initial_split(transit_final, strata = duration)
+
+train <- training(initial)
+test <- testing(initial)
+
+set.seed(99)
+folds <- vfold_cv(train, strata = duration)
+folds
+```
+
+```{r}
+tree_spec <- decision_tree()
+```
+
+
 
 
 
