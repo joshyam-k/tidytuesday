@@ -118,26 +118,17 @@ transit_final %>%
 
 
 ```{r}
-library(tidymodels)
 
-set.seed(0)
-initial <- initial_split(transit_final, strata = duration)
+# this is a funny looking plot
+# im loving the terrible colors
 
-train <- training(initial)
-test <- testing(initial)
-
-set.seed(99)
-folds <- vfold_cv(train, strata = duration)
-folds
+transit_final %>% 
+  filter(decade != 1980) %>% 
+  group_by(decade) %>% 
+  mutate(count = n()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = factor(decade), y = length, fill = factor(count))) +
+  geom_violin()
 ```
-
-```{r}
-tree_spec <- decision_tree()
-```
-
-
-
-
-
 
 
