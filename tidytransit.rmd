@@ -131,4 +131,59 @@ transit_final %>%
   geom_violin()
 ```
 
+# thinking about point distributions
+
+### poission disc sampling
+
+
+```{r}
+library(ggforce)
+R = 1 
+x0 = 0 
+y0 = 0
+
+# functions to generate random point within a circle with the specifications
+gen_r <- function(n, radius = R) radius * sqrt(runif(n))
+gen_theta <- function(n) runif(n) * 2 * pi
+
+points <- tibble(n = runif(1000))
+
+pt <- points %>% 
+  mutate(r = gen_r(n),
+         theta = gen_theta(n)) %>% 
+  mutate(
+    x = x0 + r * cos(theta),
+    y = y0 + r * sin(theta)
+    )
+
+
+ggplot(pt, aes(x,y)) +
+  geom_point() +
+  coord_fixed()
+
+
+# poisson disc
+devtools::install_github("will-r-chase/poissondisc")
+
+library(poissondisc)
+
+pts <- poisson_disc(100, 100, 10)
+
+ggplot(pts, aes(x, y)) +
+  geom_point()
+
+pts %>% 
+  count(x)
+```
+
+
+
+
+
+
+
+
+
+
+
 
