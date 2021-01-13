@@ -9,11 +9,15 @@ library(tidyverse)
 library(tidytuesdayR)
 ```
 
+
 ```{r}
 dat <- tt_load(2021, week = 3)
 
 artwork_raw <- dat$artwork
+artists_raw <- dat$artists
 ```
+
+## Artwork
 
 ```{r}
 artwork_raw %>% 
@@ -55,12 +59,12 @@ dropped_names <- artwork %>%
 # dropping the weird names
 artwork <- artwork%>% 
   filter(artist %!in% dropped_names) %>% 
-  separate(artist, into = c("fname", "lname"), sep = ",") %>% 
+  separate(artist, into = c("name1", "name2"), sep = ",") %>% 
   # i'm doing this mutate step because British school will create NAs in the separate call
   mutate(
-    lname = case_when(
-    !is.na(lname) ~ lname,
-    is.na(lname) ~ "\n"
+    name2 = case_when(
+    !is.na(name2) ~ name2,
+    is.na(name2) ~ "\n"
       )
     ) %>% 
   select(accession_number:units)
@@ -74,10 +78,97 @@ artwork <- artwork %>%
 # something to note is that there are 2381 NAs which isn't a huge amount given the size of the data set,
 # but it is still noteworthy
 
-artwork %>% 
-  count(dimensions, sort = T) %>% 
-  View()
+artwork <- artwork%>% 
+  #count(units, sort = T)  almost entirely mm
+  select(-dimensions) %>% 
+  rename(creationYear = year) # for clarity
+
+# I don't really know what to do with the creditLine column but i'll keep it since it seems interesting
+# another not is that separating the name column was messy and it could be better to not do that step..
+
 ```
 
+## Artists
 
+```{r}
+View(artists_raw)
+
+artists_raw <- artists_raw %>% 
+  select(-url)
+
+
+artists_raw %>% 
+  count(yearOfBirth)
+
+artists_raw %>% 
+  count(yearOfBirth) %>%
+  ggplot(aes(x = yearOfBirth, y = n)) + 
+  geom_point()
+
+deathy <- artists_raw %>% 
+  count(yearOfDeath)
+
+birthy <- artists_raw %>% 
+  count(yearOfBirth)
+
+# I really like this plot
+# I find the dip pretty interesting
+
+# findings max's
+
+# 1936
+birthy %>% 
+  filter(n > 40)
+
+# 2005
+deathy %>% 
+  filter(n > 30)
+
+# so many spaces!
+ggplot(deathy, aes(yearOfDeath, n)) +
+  geom_point(
+    color = "midnightblue",
+    alpha = 0.5,
+    size = 2
+    ) +
+  geom_point(
+    data = birthy,
+    aes(yearOfBirth, n),
+    color = "red", 
+    alpha = 0.5,
+    size = 2
+    ) +
+  geom_segment(
+    x = 2005, xend = 2005,
+    y = 0, yend = 55,
+    color = "midnightblue",
+    size = 2,
+    alpha = 0.3,
+    linetype = "dashed"
+    ) +
+  annotate(
+    "text",
+    label = "1936",
+    x = 1936, y = 58,
+    color = "red"
+    ) +
+  geom_segment(
+    x = 1936, xend = 1936,
+    y = 0, yend = 55,
+    color = "red",
+    size = 2,
+    alpha = 0.3,
+    linetype = "dashed"
+    ) +
+  annotate(
+    "text",
+    label = "2005",
+    x = 2005, y = 58,
+    color = "midnightblue"
+    ) +
+  ylim(0, 60) +
+  labs(x = "Year",
+       title = "Comparison of Year of Death (purple) and  \n Year of Birth (red) counts") +
+  theme_minimal() 
+```
 
