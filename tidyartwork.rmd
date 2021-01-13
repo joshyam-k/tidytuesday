@@ -31,21 +31,7 @@ artwork_raw %>%
 ```
 
 ```{r}
-artwork <- artwork_raw %>% 
-  mutate(
-    artist = case_when(
-      artist == "British (?) School" ~ "British School",
-      artist == "British School 18th century" ~ "British School",
-      artist == "British School 19th century" ~ "British School",
-      artist == "British School 17th century" ~ "British School",
-      artist == "British School 16th century" ~ "British School",
-      artist == "British (?) School 19th century" ~ "British School",
-      artist == "?British School" ~ "British School"
-      T ~ artist
-      )
-    ) %>% 
-  )
-
+# British school is written in a bunch of weird ways so i made it consistent here
 artwork <- artwork_raw %>% 
   mutate(
     artist = case_when(
@@ -63,21 +49,34 @@ dropped_names <- artwork %>%
   select(artist) %>% 
   pull()
 
-# a not in function
+# a `not in` function
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 # dropping the weird names
-artwork %>% 
+artwork <- artwork%>% 
   filter(artist %!in% dropped_names) %>% 
   separate(artist, into = c("fname", "lname"), sep = ",") %>% 
-  # i'm doing this mutate step because British school will create nas in the separate call
+  # i'm doing this mutate step because British school will create NAs in the separate call
   mutate(
     lname = case_when(
     !is.na(lname) ~ lname,
     is.na(lname) ~ "\n"
       )
-    ) 
+    ) %>% 
+  select(accession_number:units)
+
+# lump artistRole
+artwork <- artwork %>% 
+  mutate(artistRole = fct_lump_min(artistRole, 100)) 
   
+# dimension is a bit redundant because all the info we really care about in the dimension column
+# is more nicely available in the height, width, depth columns
+# something to note is that there are 2381 NAs which isn't a huge amount given the size of the data set,
+# but it is still noteworthy
+
+artwork %>% 
+  count(dimensions, sort = T) %>% 
+  View()
 ```
 
 
