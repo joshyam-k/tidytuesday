@@ -1,0 +1,84 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+```
+
+```{r}
+dat <- tt_load(2021, week = 3)
+
+artwork_raw <- dat$artwork
+```
+
+```{r}
+artwork_raw %>% 
+  select(id:units) %>%
+  count(accession_number, id, sort = T) %>% 
+  filter(n > 1)
+
+# so id and accession_number are redundant, we can just keep one
+
+artwork_raw %>% 
+  count(artist, sort = T) %>% 
+  filter(!str_detect(artist, ",")) 
+
+# there are 55 artist names that don't follow the convention
+```
+
+```{r}
+artwork <- artwork_raw %>% 
+  mutate(
+    artist = case_when(
+      artist == "British (?) School" ~ "British School",
+      artist == "British School 18th century" ~ "British School",
+      artist == "British School 19th century" ~ "British School",
+      artist == "British School 17th century" ~ "British School",
+      artist == "British School 16th century" ~ "British School",
+      artist == "British (?) School 19th century" ~ "British School",
+      artist == "?British School" ~ "British School"
+      T ~ artist
+      )
+    ) %>% 
+  )
+
+artwork <- artwork_raw %>% 
+  mutate(
+    artist = case_when(
+      str_detect(artist, "\\.?British") ~ "British School",
+      T ~ artist)
+    )
+
+# other than british school the other observations with unusual names are kind've anomalies and have very few
+# occurences so I'm going to drop them
+
+dropped_names <- artwork %>% 
+  count(artist, sort = T) %>% 
+  filter(!str_detect(artist, ",")) %>% 
+  filter(artist != "British School") %>% 
+  select(artist) %>% 
+  pull()
+
+# a not in function
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+# dropping the weird names
+artwork %>% 
+  filter(artist %!in% dropped_names) %>% 
+  separate(artist, into = c("fname", "lname"), sep = ",") %>% 
+  # i'm doing this mutate step because British school will create nas in the separate call
+  mutate(
+    lname = case_when(
+    !is.na(lname) ~ lname,
+    is.na(lname) ~ "\n"
+      )
+    ) 
+  
+```
+
+
+
