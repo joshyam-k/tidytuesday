@@ -172,3 +172,138 @@ ggplot(deathy, aes(yearOfDeath, n)) +
   theme_minimal() 
 ```
 
+### Modeling (following silge video)
+
+```{r}
+library(tidymodels)
+theme_set(theme_minimal())
+View(artwork_raw)
+```
+
+
+```{r}
+# weird bimodal distribution
+artwork_raw %>% 
+  ggplot(aes(year)) +
+  geom_histogram(alpha = 0.8, fill = "midnightblue")
+
+tate_df <- artwork_raw %>% 
+  filter(year > 1750) %>% 
+  select(year, medium) %>% 
+  na.omit() %>% 
+  arrange(year)
+```
+
+
+```{r}
+library(tidytext)
+
+# most common words in medium
+tate_df %>% 
+  unnest_tokens(word, medium) %>% 
+  count(word, sort = T)
+```
+
+
+```{r}
+set.seed(50)
+art_split <- initial_split(tate_df, strata = year)
+test <- testing(art_split)
+train <- training(art_split)
+
+set.seed(34)
+art_folds <- vfold_cv(train, strata = year)
+```
+
+```{r}
+library(textrecipes)
+
+art_rec <- recipe(year ~ medium, data = train) %>% 
+  step_tokenize(medium) %>% 
+  step_stopwords(medium) %>% 
+  step_tokenfilter(medium, max_tokens = 500) %>% 
+  step_tfidf(medium) 
+```
+
+```{r}
+sparse_bp <- hardhat::default_recipe_blueprint(composition = "dgCMatrix")
+
+lasso_spec <- linear_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+art_wf <- workflow() %>% 
+  add_recipe(art_rec, blueprint = sparse_bp) %>% 
+  add_model(lasso_spec)
+```
+
+```{r}
+doParallel::registerDoParallel()
+
+lambda_grid <- grid_regular(penalty(range = c(-3, 0)), levels = 20)
+
+lasso_results <- tune_grid(
+  art_wf,
+  resamples = art_folds,
+  grid = lambda_grid
+)
+```
+
+### evaluate model
+
+```{r}
+autoplot(lasso_results)
+best_rmse <- select_best(lasso_results, "rmse")
+
+final_lasso <- finalize_workflow(art_wf, best_rmse)
+```
+
+
+```{r}
+art_final <- last_fit(final_lasso, art_split)
+```
+
+```{r}
+library(vip)
+
+art_vip <- pull_workflow_fit(art_final$.workflow[[1]]) %>% 
+  vi()
+  
+art_vip %>% 
+  group_by(Sign) %>% 
+  slice_max(abs(Importance), n = 20) %>% 
+  ungroup() %>% 
+  mutate(
+    Variable = str_remove(Variable, "tfidf_medium_"),
+    Importance = abs(Importance),
+    Variable = fct_reorder(Variable, Importance),
+    Sign = if_else(Sign == "POS", "more in later art", "more in earlier art")
+  ) %>% 
+  ggplot(aes(Importance, Variable, fill = Sign)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~Sign, scales = "free") +
+  labs(y = "")
+
+```
+
+```{r}
+collect_predictions(art_final) %>% 
+  ggplot(aes(year,.pred)) +
+  geom_abline(lty = 2, color = "grey50", size = 1.5) +
+  geom_point(alpha = 0.3, size = 1.5, color = "midnightblue") +
+  coord_fixed()
+```
+
+```{r}
+# looking at where the model messed up the most
+collect_predictions(art_final) %>% 
+  bind_cols(test %>% select(medium)) %>% 
+  filter(abs(year - .pred) > 100)
+```
+
+
+
+
+
+
+
+
