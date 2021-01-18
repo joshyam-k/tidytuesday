@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
 library(scales)
+library(janitor)
 
 theme_set(theme_minimal())
 ```
@@ -83,19 +84,26 @@ finalkenya <- gender %>%
          County = case_when(County == "total" ~ "kenya",
                             County == "nairobicity" ~ "nairobi",
                             T ~ County)) %>% 
-  left_join(cropHousehold, by = c("County" = "SubCounty")) 
+  left_join(cropHousehold, by = c("County" = "SubCounty")) %>% 
+  clean_names()
 
 # all fixed!, here's the final joined dataset
 
 # another missing data plot for final df
 
-finalkenya %>% 
+finaldf %>% 
   summarise(across(everything(), ~mean(!is.na(.)))) %>% 
   gather() %>% 
   mutate(key = fct_reorder(key, value)) %>% 
-  ggplot(aes(x = key, y = value)) +
-  geom_col(fill = "midnightblue", alpha = 0.8) +
-  geom_text(aes(label = percent(value)), nudge_y = 0.05) +
+  ggplot(aes(key, value)) +
+  geom_col(
+    fill = "midnightblue",
+    alpha = 0.8
+    ) +
+  geom_text(
+    aes(label = percent(value)),
+    nudge_y = 0.05
+    ) +
   scale_y_continuous(labels = scales::percent) +
   theme(axis.text.x = element_blank()) +
   labs(x = "",
