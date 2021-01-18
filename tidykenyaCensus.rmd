@@ -7,6 +7,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
+library(scales)
+
+theme_set(theme_minimal())
 ```
 
 ```{r}
@@ -18,5 +21,89 @@ data <- tt_load(2021, week = 4)
 households <- data$households
 crops <- data$crops
 gender <- data$gender
+```
+
+```{r}
+# no missing data for households!, looks like fourth column is just a ratio of the second and third.
+households %>% 
+  summarise(across(everything(), ~ mean(!is.na(.)))) %>% 
+  gather() %>% 
+  View()
+
+households <- households %>% 
+  mutate(County = str_to_lower(County),
+         County = str_trim(County, "right"),
+         County = case_when(County == "nairobicity" ~ "nairobi",
+                            T ~ County)) 
+
+# crops
+
+# looks like each input is the population in the subcounty that grows those specific crops
+crops <- crops %>% 
+  mutate(SubCounty = str_to_lower(SubCounty),
+         SubCounty = str_trim(SubCounty, "right"),
+         SubCounty = str_remove(SubCounty, " "))
+
+str(crops) # each variable seems to be of the correct type
+
+# an awesome way to look at how much data we are missing
+crops %>% 
+  summarise(across(everything(), ~mean(!is.na(.)))) %>% 
+  gather() %>% 
+  mutate(key = fct_reorder(key, value)) %>% 
+  ggplot(aes(x = key, y = value)) +
+  geom_col(fill = "midnightblue", alpha = 0.7) +
+  geom_text(aes(label = percent(value)), nudge_y = 0.05) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(axis.text.x = element_blank()) +
+  labs(x = "",
+       y = "% of data present") +
+  coord_flip()
+
+# lets check to see if theres a 1:1 between SubCounties in this dataset and Counties in the households one
+
+cropHousehold <- crops %>% 
+  left_join(households, by = c("SubCounty" = "County"))
+
+# mistakes with `tana river` and `tanariver`, `west pokot` and `westpokot`, `trans nzoia` and `transnzoia`
+# `uasin gishu` and `uasingishu`, `homa bay` and `homebay`
+# `nairobi` and `nairobicity` (more irregular)
+
+# all fixed!
+
+View(gender)
+# kenya == total here
+# nairobi city needs to be fixed
+# str_to_lower needs to be done on County
+# str_remove(County, " ")
+
+finalkenya <- gender %>% 
+  mutate(County = str_to_lower(County),
+         County = str_remove(County, " "),
+         County = case_when(County == "total" ~ "kenya",
+                            County == "nairobicity" ~ "nairobi",
+                            T ~ County)) %>% 
+  left_join(cropHousehold, by = c("County" = "SubCounty")) 
+
+# all fixed!, here's the final joined dataset
+
+# another missing data plot for final df
+
+finalkenya %>% 
+  summarise(across(everything(), ~mean(!is.na(.)))) %>% 
+  gather() %>% 
+  mutate(key = fct_reorder(key, value)) %>% 
+  ggplot(aes(x = key, y = value)) +
+  geom_col(fill = "midnightblue", alpha = 0.8) +
+  geom_text(aes(label = percent(value)), nudge_y = 0.05) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(axis.text.x = element_blank()) +
+  labs(x = "",
+       y = "% of data present") +
+  coord_flip()
+
+
+
+
 ```
 
