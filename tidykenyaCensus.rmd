@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+```
+
+```{r}
+data <- tt_load(2021, week = 4)
+```
+
+```{r}
+# setting up data
+households <- data$households
+crops <- data$crops
+gender <- data$gender
+```
+
