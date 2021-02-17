@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+library(tidycensus)
+library(sf)
+```
+
+
+```{r}
+# credit to ajstarks!
+
+georgia_pop <- read_csv("/Users/joshuayamamoto/Downloads/data.csv")
+
+georgia_pop %>% 
+  count(Population)
+
+# api key for tidycensus use
+
+census_api_key("0839b9dfec5190b45a8435fa4d7597b59a4ffbdc")
+
+```
+
+```{r}
+# I hope the county lines haven't changed a huge amount, but it's entirely possible that they did
+
+GA_raw <- get_acs(geography = "county",
+              variables = c(medincome = "B19013_001"),
+              state = "GA", 
+              year = 2010,
+              geometry = T)
+
+GA <- GA_raw %>% 
+  select(-c(variable, estimate, moe)) 
+
+# cleaning county names for join
+
+GA_final <- GA %>% 
+  mutate(NAME = str_remove(NAME, " County, Georgia"))
+
+
+```
+
+
+```{r}
+rtest <- read_csv("/Users/joshuayamamoto/Downloads/QUITMAN01-coord.csv")
+
+rtest <- rtest %>% 
+  rename(lon = `85.06083`, lat = `31.98500`)
+
+rgeo <- st_as_sf(rtest, coords = c("lon", "lat"))
+  
+st_cast(rgeo, "POLYGON")
+
+```
+
+
+
