@@ -3,61 +3,343 @@ title: "Untitled"
 output: html_document
 ---
 
+# load packages
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
 library(tidycensus)
 library(sf)
+library(rvest)
+library(ragg)
+library(cowplot)
 ```
 
+# scraping file names for csv readings
 
 ```{r}
-# credit to ajstarks!
+link <- "https://github.com/ajstarks/dubois-data-portraits/tree/master/plate05"
 
-georgia_pop <- read_csv("/Users/joshuayamamoto/Downloads/data.csv")
+page <- read_html(link)
 
-georgia_pop %>% 
-  count(Population)
-
-# api key for tidycensus use
-
-census_api_key("0839b9dfec5190b45a8435fa4d7597b59a4ffbdc")
-
-```
-
-```{r}
-# I hope the county lines haven't changed a huge amount, but it's entirely possible that they did
-
-GA_raw <- get_acs(geography = "county",
-              variables = c(medincome = "B19013_001"),
-              state = "GA", 
-              year = 2010,
-              geometry = T)
-
-GA <- GA_raw %>% 
-  select(-c(variable, estimate, moe)) 
-
-# cleaning county names for join
-
-GA_final <- GA %>% 
-  mutate(NAME = str_remove(NAME, " County, Georgia"))
-
-
-```
-
-
-```{r}
-rtest <- read_csv("/Users/joshuayamamoto/Downloads/QUITMAN01-coord.csv")
-
-rtest <- rtest %>% 
-  rename(lon = `85.06083`, lat = `31.98500`)
-
-rgeo <- st_as_sf(rtest, coords = c("lon", "lat"))
+unique_names <- page %>% 
+  html_nodes(css = ".link-gray-dark") %>% 
+  html_text() %>% 
+  as_tibble() %>% 
+  slice(12:212) %>% 
+  filter(!str_detect(value, "APPLING") & 
+         !str_detect(value, "BIBB") &
+         !str_detect(value, "BROOKS") &
+         !str_detect(value, "CAMDEN") &
+         !str_detect(value, "CHATHAM") &
+         !str_detect(value, "GLYNN") &
+         !str_detect(value, "IRWIN") &
+         !str_detect(value, "LIBERTY") &
+         !str_detect(value, "MARION") &
+         !str_detect(value, "McINTOSH") &
+         !str_detect(value, "TALBOT") &
+         !str_detect(value, "TAYLOR") &
+         !str_detect(value, "TWIGGS") &
+         !str_detect(value, "WILCOX") &
+         !str_detect(value, "WORTH")
+         ) %>% 
+  pull()
   
-st_cast(rgeo, "POLYGON")
+# repititions
+
+#APPLING, BIBB, BROOKS, CAMDEN, CHATHAM, GLYNN, IRWIN, LIBERTY, MARION, McINTOSH, TALBOT, TAYLOR, TWIGGS, WILCOX, WORTH
+  
+```
+
+# data pulling for unique county names 
+
+```{r}
+# function to read the csvs off of github
+# the inputs are the county names, scrapped from the github page
+
+load_coords <- function(county){
+  
+  data <- glue::glue("https://raw.githubusercontent.com/ajstarks/dubois-data-portraits/master/plate05/{county}") %>% 
+  map(
+    read_csv
+  ) 
+  
+  data <- data[[1]]
+  
+  data %>% 
+    rbind(as.double(names(data))) %>% 
+    rename(lon = names(data)[1], lat = names(data)[2]) %>% 
+    mutate(name = county,
+           name = str_remove(name, "-coord.csv"))
+  
+}
+
+# used map to read the csvs for all unique counties and then bound it all together into one big df
+
+unique_coords <- unique_names %>% 
+  map(
+    load_coords
+  ) %>% 
+  bind_rows()
+
+
+```
+
+# data pulling for repetitive county names
+
+```{r}
+# repititions
+
+#APPLING, BIBB, BROOKS, CAMDEN, CHATHAM, GLYNN, IRWIN, LIBERTY, MARION, McINTOSH, TALBOT, TAYLOR, TWIGGS, WILCOX, WORTH
+
+# this is a god awful way to do this, but i cant think of another way
+
+AP1 <- load_coords("APPLING01-coord.csv")
+AP2 <- load_coords("APPLING02-coord.csv")
+
+AP <- rbind(AP1, AP2)
+
+BI1 <- load_coords("BIBB01-coord.csv")
+BI2 <- load_coords("BIBB02-coord.csv")
+
+BI <- rbind(BI1, BI2)
+
+BR1 <- load_coords("BROOKS01-coord.csv")
+BR2 <- load_coords("BROOKS02-coord.csv")
+
+BR <- rbind(BR1, BR2)
+
+CA1 <- load_coords("CAMDEN01-coord.csv")
+CA2 <- load_coords("CAMDEN02-coord.csv")
+CA3 <- load_coords("CAMDEN03-coord.csv")
+CA4 <- load_coords("CAMDEN04-coord.csv")
+CA5 <- load_coords("CAMDEN05-coord.csv")
+CA6 <- load_coords("CAMDEN06-coord.csv")
+CA7 <- load_coords("CAMDEN07-coord.csv")
+CA8 <- load_coords("CAMDEN08-coord.csv")
+CA9 <- load_coords("CAMDEN09-coord.csv")
+
+CA <- rbind(CA1, CA2, CA3, CA4, CA5, CA6, CA7, CA8, CA9)
+
+
+CH1 <- load_coords("CHATHAM01-coord.csv")
+CH2 <- load_coords("CHATHAM02-coord.csv")
+CH3 <- load_coords("CHATHAM03-coord.csv")
+CH4 <- load_coords("CHATHAM04-coord.csv")
+CH5 <- load_coords("CHATHAM05-coord.csv")
+CH6 <- load_coords("CHATHAM06-coord.csv")
+CH7 <- load_coords("CHATHAM07-coord.csv")
+CH8 <- load_coords("CHATHAM08-coord.csv")
+CH9 <- load_coords("CHATHAM09-coord.csv")
+CH10 <- load_coords("CHATHAM10-coord.csv")
+CH11 <- load_coords("CHATHAM11-coord.csv")
+CH12 <- load_coords("CHATHAM12-coord.csv")
+CH13 <- load_coords("CHATHAM13-coord.csv")
+
+CH <- rbind(CH1, CH2, CH3, CH4, CH5, CH6, CH7, CH8, CH9, CH10, CH11, CH12, CH13)
+
+G1 <- load_coords("GLYNN01-coord.csv")
+G2 <- load_coords("GLYNN02-coord.csv")
+G3 <- load_coords("GLYNN03-coord.csv")
+G4 <- load_coords("GLYNN04-coord.csv")
+G5 <- load_coords("GLYNN05-coord.csv")
+G6 <- load_coords("GLYNN06-coord.csv")
+G7 <- load_coords("GLYNN07-coord.csv")
+G8 <- load_coords("GLYNN08-coord.csv")
+G9 <- load_coords("GLYNN09-coord.csv")
+G10 <- load_coords("GLYNN10-coord.csv")
+G11 <- load_coords("GLYNN11-coord.csv")
+
+G <- rbind(G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G11)
+
+IR1 <- load_coords("IRWIN01-coord.csv")
+IR2 <- load_coords("IRWIN02-coord.csv")
+
+IR <- rbind(IR1, IR2)
+
+L1 <- load_coords("LIBERTY01-coord.csv")
+L2 <- load_coords("LIBERTY02-coord.csv")
+L3 <- load_coords("LIBERTY03-coord.csv")
+L4 <- load_coords("LIBERTY04-coord.csv")
+L5 <- load_coords("LIBERTY05-coord.csv")
+L6 <- load_coords("LIBERTY06-coord.csv")
+L7 <- load_coords("LIBERTY07-coord.csv")
+L8 <- load_coords("LIBERTY08-coord.csv")
+L9 <- load_coords("LIBERTY09-coord.csv")
+
+L <- rbind(L1, L2, L3, L4, L5, L6, L7, L8, L9)
+
+MA1 <- load_coords("MARION01-coord.csv")
+MA2 <- load_coords("MARION02-coord.csv")
+MA3 <- load_coords("MARION03-coord.csv")
+
+MA <- rbind(MA1, MA2, MA3)
+
+MC1 <- load_coords("McINTOSH01-coord.csv")
+MC2 <- load_coords("McINTOSH02-coord.csv")
+MC3 <- load_coords("McINTOSH03-coord.csv")
+MC4 <- load_coords("McINTOSH04-coord.csv")
+MC5 <- load_coords("McINTOSH05-coord.csv")
+MC6 <- load_coords("McINTOSH06-coord.csv")
+MC7 <- load_coords("McINTOSH07-coord.csv")
+MC8 <- load_coords("McINTOSH08-coord.csv")
+MC9 <- load_coords("McINTOSH09-coord.csv")
+MC10 <- load_coords("McINTOSH10-coord.csv")
+MC11 <- load_coords("McINTOSH11-coord.csv")
+
+MC <- rbind(MC1, MC2, MC3, MC4, MC5, MC6, MC7, MC8, MC9, MC10, MC11)
+
+TA1 <- load_coords("TALBOT01-coord.csv")
+TA2 <- load_coords("TALBOT02-coord.csv")
+TA3 <- load_coords("TALBOT03-coord.csv")
+TA4 <- load_coords("TALBOT04-coord.csv")
+TA5 <- load_coords("TALBOT05-coord.csv")
+
+TA <- rbind(TA1, TA2, TA3, TA4, TA5)
+
+TAY1 <- load_coords("TAYLOR01-coord.csv")
+TAY2 <- load_coords("TAYLOR02-coord.csv")
+TAY3 <- load_coords("TAYLOR03-coord.csv")
+
+TAY <- rbind(TAY1, TAY2, TAY3)
+
+TW1 <- load_coords("TWIGGS01-coord.csv")
+TW2 <- load_coords("TWIGGS02-coord.csv")
+
+TW <- rbind(TW1, TW2)
+
+WI1 <- load_coords("WILCOX01-coord.csv")
+WI2 <- load_coords("WILCOX02-coord.csv")
+WI3 <- load_coords("WILCOX03-coord.csv")
+
+WI <- rbind(WI1, WI2, WI3)
+
+WO1 <- load_coords("WORTH01-coord.csv")
+WO2 <- load_coords("WORTH02-coord.csv")
+
+WO <- rbind(WO1, WO2)
+
+final_rep <- rbind(AP, BI, BR, CA, CH, G, IR, L, MA, MC, TA, TAY, TW, WI, WO)
+
+final_coords <- rbind(final_rep, unique_coords) %>% 
+  mutate(name = str_remove(name, "\\d+")) %>% 
+  mutate(lon = -lon)
 
 ```
 
 
+# loading population data, joining with coords, converting to multipolygon
+
+```{r}
+pop_data_raw <- read_csv("https://raw.githubusercontent.com/ajstarks/dubois-data-portraits/master/plate05/data.csv")
+
+pop_data <- pop_data_raw %>% 
+  filter(County != "BIBB02") %>% 
+  filter(County != "MARION03")
+
+poly <- st_as_sf(final_coords, coords = c("lon", "lat"), crs = 4326) %>% 
+  group_by(name) %>% 
+  summarise(geometry = st_combine(geometry)) %>% 
+  st_cast("POLYGON") %>% 
+  st_cast("MULTIPOLYGON")
+
+final_data <- poly %>% 
+  left_join(pop_data, by = c("name" = "County")) %>% 
+  mutate(Population = case_when(
+    Population == "> 30000" ~ "OVER 30,000 NEGROES",
+    Population == "20000 - 30000" ~ "BETWEEN 20,000 AND 30,000",
+    Population == "15000 - 20000" ~ "15,000 TO 20,000",
+    Population == "10000 - 15000" ~ "10,000 TO 15,000",
+    Population == "5000 - 10000" ~ "5,000 TO 10,000",
+    Population == "2500 - 5000" ~ "2,500 TO 5,000",
+    Population  == "1000 - 2500" ~ "1,000 TO 2,500",
+    Population == "> 1000" ~ "UNDER 1,000"
+  ))
+
+
+levels <- c("OVER 30,000 NEGROES", "BETWEEN 20,000 AND 30,000", "15,000 TO 20,000", "10,000 TO 15,000", "5,000 TO 10,000", "2,500 TO 5,000", "1,000 TO 2,500", "UNDER 1,000")
+
+final_data <- final_data %>% 
+  mutate(Population = fct_relevel(factor(Population), levels))
+
+map <- ggplot(final_data, aes(fill = Population)) +
+  geom_sf(color = "gray25", size = 0.2) +
+  scale_fill_manual(
+    name = "",
+    values = c("black", "#02024f", "#4a351a", "#ccb699",
+               "#c72a47", "#edb4bf", "#dbbe2c", "#5a735c")
+  ) +
+  labs(
+    title = "NEGRO POPULATION OF GEORGIA BY COUNTIES",
+    subtitle = "1890."
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(
+      family = "Rajdhani",
+      hjust = 0.47,
+      face = "bold", 
+      size = 20
+      ),
+    plot.subtitle = element_text(
+      family = "Rajdhani",
+      hjust = 0.47,
+      margin = margin(5, 0, 60, 0),
+      face = "bold", size = 18
+      ),
+    legend.position = "none",
+    legend.text = element_text(family = "Rajdhani")
+  ) 
+
+```
+
+# making legend ggplot
+
+```{r}
+colors <- tibble(
+  x = c(5, 60, 5, 60, 5, 60, 5, 60),
+  y = c(5, 5, 10, 10, 15, 15, 20, 20),
+  levs = c(
+    "10,000 TO 15,000", "UNDER 1,000", "15,000 TO 20,000", "1,000 TO 2,500", "BETWEEN 20,000 AND 30,000       ", "2,500 TO 5,000",  "OVER 30,000 NEGROES", "5,000 TO 10,000"
+    )
+)
+
+legend <- data %>% 
+  ggplot(aes(x, y, color = levs))+
+  geom_point(size = 9, show.legend = F) +
+  scale_color_manual(
+    name = "",
+    values = c(
+      "#dbbe2c", "#ccb699", "#4a351a", "#edb4bf","#c72a47", "#02024f", "black", "#5a735c"
+      )
+  ) +
+  xlim(c(-15, 100)) +
+  ylim(c(-5, 25)) +
+  geom_text(
+    aes(label = levs),
+    size = 5,
+    hjust = -0.21,
+    color = "black",
+    family = "Rajdhani"
+    ) +
+  theme_void() 
+
+```
+
+
+# final plot
+
+```{r}
+
+plot_grid(
+  map, legend,
+  ncol = 1, 
+  rel_heights = c(2,1.2)
+) +
+  theme(
+    plot.margin = margin(0, 0, 20, 0),
+    plot.background = element_rect(fill = "#f0dfd3")
+  )
+```
 
