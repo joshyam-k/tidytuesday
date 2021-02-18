@@ -8,8 +8,6 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(tidytuesdayR)
-library(tidycensus)
 library(sf)
 library(rvest)
 library(ragg)
