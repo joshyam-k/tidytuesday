@@ -21,33 +21,13 @@ link <- "https://github.com/ajstarks/dubois-data-portraits/tree/master/plate05"
 
 page <- read_html(link)
 
-unique_names <- page %>% 
+names <- page %>% 
   html_nodes(css = ".link-gray-dark") %>% 
   html_text() %>% 
   as_tibble() %>% 
-  slice(12:212) %>% 
-  filter(!str_detect(value, "APPLING") & 
-         !str_detect(value, "BIBB") &
-         !str_detect(value, "BROOKS") &
-         !str_detect(value, "CAMDEN") &
-         !str_detect(value, "CHATHAM") &
-         !str_detect(value, "GLYNN") &
-         !str_detect(value, "IRWIN") &
-         !str_detect(value, "LIBERTY") &
-         !str_detect(value, "MARION") &
-         !str_detect(value, "McINTOSH") &
-         !str_detect(value, "TALBOT") &
-         !str_detect(value, "TAYLOR") &
-         !str_detect(value, "TWIGGS") &
-         !str_detect(value, "WILCOX") &
-         !str_detect(value, "WORTH")
-         ) %>% 
+  slice(12:210) %>% 
   pull()
-  
-# repititions
 
-#APPLING, BIBB, BROOKS, CAMDEN, CHATHAM, GLYNN, IRWIN, LIBERTY, MARION, McINTOSH, TALBOT, TAYLOR, TWIGGS, WILCOX, WORTH
-  
 ```
 
 # data pulling for unique county names 
@@ -73,16 +53,60 @@ load_coords <- function(county){
   
 }
 
-# used map to read the csvs for all unique counties and then bound it all together into one big df
-
-unique_coords <- unique_names %>% 
+coords <- names %>% 
   map(
     load_coords
   ) %>% 
   bind_rows()
 
+coords_f <- coords %>% 
+  mutate(name = str_remove(name, "\\d+")) %>% 
+  mutate(lon = -lon)
+
+
 
 ```
+
+```{r}
+# test map of counties
+
+poly_f <- st_as_sf(coords_f, coords = c("lon", "lat"), crs = 4326) %>% 
+  group_by(name) %>% 
+  summarise(geometry = st_combine(geometry)) %>% 
+  st_cast("POLYGON") %>% 
+  st_cast("MULTIPOLYGON")
+
+ggplot(poly_f) +
+  geom_sf()
+```
+
+```{r}
+mc<- coords_f %>% 
+  filter(name == "McINTOSH")
+
+
+mc %>% 
+  distinct() %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+  group_by(name) %>% 
+  summarise(geometry = st_combine(geometry)) %>% 
+  st_cast("POLYGON") %>% 
+  st_cast("MULTIPOLYGON") %>% 
+  ggplot() +
+  geom_sf()
+
+coords_f %>% 
+  group_by(lon, lat) %>% 
+  distinct() %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+  group_by(name) %>% 
+  summarise(geometry = st_combine(geometry)) %>% 
+  st_cast("POLYGON") %>% 
+  st_cast("MULTIPOLYGON") %>% 
+  ggplot() +
+  geom_sf()
+```
+
 
 # data pulling for repetitive county names
 
