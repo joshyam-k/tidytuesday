@@ -22,17 +22,19 @@ link <- "https://github.com/ajstarks/dubois-data-portraits/tree/master/plate05"
 page <- read_html(link)
 
 names <- page %>% 
-  html_nodes(css = ".link-gray-dark") %>% 
+  html_nodes(css = ".Link--primary") %>% 
   html_text() %>% 
-  as_tibble() %>% 
-  slice(12:210) %>% 
+  as_tibble()%>% 
+  slice(11:211) %>% 
   pull()
 
 ```
 
-# data pulling for unique county names 
+# data pulling for county names 
 
 ```{r}
+
+
 # function to read the csvs off of github
 # the inputs are the county names, scrapped from the github page
 
@@ -45,11 +47,14 @@ load_coords <- function(county){
   
   data <- data[[1]]
   
-  data %>% 
-    rbind(as.double(names(data))) %>% 
+  data <- rbind(as.double(names(data)), data)
+  
+  data_final <- data %>% 
     rename(lon = names(data)[1], lat = names(data)[2]) %>% 
     mutate(name = county,
            name = str_remove(name, "-coord.csv"))
+  
+  data_final
   
 }
 
@@ -74,18 +79,20 @@ poly_f <- st_as_sf(coords_f, coords = c("lon", "lat"), crs = 4326) %>%
   group_by(name) %>% 
   summarise(geometry = st_combine(geometry)) %>% 
   st_cast("POLYGON") %>% 
-  st_cast("MULTIPOLYGON")
-
-ggplot(poly_f) +
+  st_cast("MULTIPOLYGON") %>% 
+  ggplot() +
   geom_sf()
+
+poly_f
+
 ```
 
 ```{r}
-mc<- coords_f %>% 
+mc <- coords_f %>% 
   filter(name == "McINTOSH")
 
-
 mc %>% 
+  group_by(lon, lat) %>% 
   distinct() %>% 
   st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
   group_by(name) %>% 

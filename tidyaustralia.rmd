@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggpubr)
 library(cowplot)
+library(ggtext)
 ```
 
 ```{r}
@@ -114,93 +115,30 @@ brisbane_complaints1%>%
 ```
 
 
+
 ```{r}
-d1<-brisbane_complaints1%>%
-  filter(year==2017)
-
-  g1<-ggplot(d1,aes(x=month_range1, fill=category))+
+ggplot(brisbane_complaints1,aes(x=month_range1, fill=category))+
   geom_bar()+
-  scale_fill_manual(values = c("aliceblue", "darkkhaki",
-                                      "dodgerblue4", "cornsilk3"))+
-  labs(title = "Number of Violent  Animal Complaints Per-Quarter In Brisbane, (2017-2019)",
-       x= "", y = "")+
-   theme(panel.background = element_rect(fill= "darkslategrey"), 
-        plot.background = element_rect(fill = "darkslategrey"),
-        axis.text.x = element_text(color = "white"), 
-        axis.text.y = element_text(color = "white"), 
-        plot.subtitle = element_text(margin= margin(0,0,15,0),
-                                    hjust=0, color = "white"),
+  facet_wrap(~year)+
+  scale_fill_manual(values = c("chartreuse4", "darkkhaki",
+                                      "#0f7698", "darkgrey"))+
+  labs(x="", y="", title = "<span style='font-size:10.5pt'>Complaints of
+    <span style='color:#458b00;'>Animal on Animal attacks</span> , 
+    <span style='color:#bdb76b;'>Animal on Human attacks</span>,
+    <span style='color:#0f7698;'>Menacing animals</span>, and
+    <span style='color:darkgrey;'>Dangerous animals</span> in Brisbane
+    </span>")+
+  theme(panel.background = element_rect(fill= "aliceblue"), 
+        plot.background = element_rect(fill = "aliceblue"),
+        axis.text.x = element_text(color = "black"), 
+        axis.text.y = element_text(color = "black"), 
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.title= element_text(size=18,
-                                    color = "white",
-                                    face = "bold", 
-                                    margin = margin(10, 0, 2, 0), hjust =0),
+        panel.grid.minor = element_line(color = "grey"),
+        plot.title = element_markdown(lineheight = 1.1),
         legend.position = "none",
-        plot.margin = unit(c(0,5.5,0,0), "cm")) 
+        plot.margin = unit(c(1,1,0,0), "cm")) #top, right, bottom, left
   
-  
-  d2<-brisbane_complaints1%>%
-    filter(year==2018)
-  
-  g2<-ggplot(d2,aes(x=month_range1, fill=category))+
-  geom_bar()+
-  scale_fill_manual(values = c("aliceblue", "darkkhaki",
-                                      "dodgerblue4", "cornsilk3"))+
-  labs(x="", y="")+
-  theme(panel.background = element_rect(fill= "darkslategrey"), 
-        plot.background = element_rect(fill = "darkslategrey"),
-        axis.text.x = element_text(color = "white"), 
-        axis.text.y = element_text(color = "white"), 
-        plot.subtitle = element_text(margin= margin(0,0,15,0),
-                                    hjust=0, color = "white"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.title= element_text(size=14,
-                                    color = "white",
-                                    face = "bold", 
-                                    margin = margin(10, 0, 2, 0), hjust =0),
-        legend.position = "right",
-        plot.margin = unit(c(1,1,0.5,0), "cm"))
-  
-  
-  d3<-brisbane_complaints1%>%
-    filter(year==2019)
-  
-  g3<-ggplot(d3,aes(x=month_range1, fill=category))+
-  geom_bar()+
-  scale_fill_manual(values = c("aliceblue", "darkkhaki",
-                                      "dodgerblue4", "cornsilk3"))+
-  labs(x="", y="")+
-  theme(panel.background = element_rect(fill= "darkslategrey"), 
-        plot.background = element_rect(fill = "darkslategrey"),
-        axis.text.x = element_text(color = "white"), 
-        axis.text.y = element_text(color = "white"), 
-        plot.subtitle = element_text(margin= margin(0,0,15,0),
-                                    hjust=0, color = "white"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.title= element_text(size=14,
-                                    color = "white",
-                                    face = "bold", 
-                                    margin = margin(10, 0, 2, 0), hjust =0),
-        legend.position = "none",
-        plot.margin = unit(c(1,5.5,0,0), "cm")) #top, right, bottom, left
-
 ```
-  
-```{r fig.height=5, fig.width= 8}
-#ggarrange(g1,g2,g3,
-          #ncol=1, nrow = 3)
-# either works
-plot_grid(g1,g2,g3,
-          ncol=1,
-          nrow=3)
-
-
-```
-
-
 
 
 
