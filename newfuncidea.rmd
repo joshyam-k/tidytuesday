@@ -34,26 +34,51 @@ would be cool to write a function that makes all of this a whole lot easier
 maybe try binary
 
 ```{r}
+# def genbin(n, bs=''):
+# if len(bs) == n:
+#     print(bs)
+# else:
+#     genbin(n, bs + '0')
+#     genbin(n, bs + '1')
+
+binary_strings <- function(n, digits = 0:1) {
+  if (n <= 0) return(matrix(0,0,0))
+  if (n == 1) return(matrix(digits, 2))
+  x <- binary_strings(n - 1)
+  rbind(cbind(digits[1], x), cbind(digits[2], x))
+}
+
+```
+
+
+```{r}
 name_variety <- function(name) {
   
   # separate string into its individual words
   
   words <- str_split(name, " ")[[1]]
   
-  bank <- list()
-  for (i in seq_along(words)){
-    bank[[i]] <- c(str_to_lower(words[i]), str_to_upper(words[i]))
-
+  # create bistrings
+  
+  n <- length(words)
+  
+  binary_tibble <- as_tibble(binary_strings(n))
+  
+  options <- list()
+  for (row in 1:nrow(binary_tibble)) {
+    #print(binary_tibble[row, ])
+    for (col in 1:n) {
+      if (row[col] == 0) {
+        words[col]
+      }
+      
+    }
   }
-  
-  bank
+
   
 }
 
 
-for (i in seq_along(tt)) {
-  print(word[i])
-}
 ```
 
 Things to check for:
