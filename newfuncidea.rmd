@@ -31,15 +31,9 @@ survey_clean <- survey %>%
 
 would be cool to write a function that makes all of this a whole lot easier
 
-maybe try binary
 
 ```{r}
-# def genbin(n, bs=''):
-# if len(bs) == n:
-#     print(bs)
-# else:
-#     genbin(n, bs + '0')
-#     genbin(n, bs + '1')
+# binary string generator
 
 binary_strings <- function(n, digits = c('0','1')) {
   if (n <= 0) return(matrix(0,0,0))
@@ -49,10 +43,6 @@ binary_strings <- function(n, digits = c('0','1')) {
 }
 
 
-```
-
-
-```{r}
 name_variety <- function(name) {
   
   # separate string into its individual words
@@ -64,6 +54,8 @@ name_variety <- function(name) {
   n <- length(words)
   
   binary_tibble <- as_tibble(binary_strings(n))
+  
+  # create placeholder tibbles to be filled with modified strings
   
   full_word_cap <- binary_tibble
   first_letter_cap <- binary_tibble
@@ -81,11 +73,17 @@ name_variety <- function(name) {
      }
   }
   
+  # right now each word is a different column so we'd like to the unite the columns with a space as the seperator
+  
   first_letter_cap <- unite(first_letter_cap, phrase, 1:ncol(first_letter_cap), sep = " ")
   full_word_cap <- unite(full_word_cap, phrase, 1:ncol(full_word_cap), sep = " ")
   
+  # remove any duplicates
+  
   final_phrases <- rbind(first_letter_cap, full_word_cap) %>% 
     distinct(.keep_all = T)
+  
+  # turn our dataframe into a vector where each object is a string
   
   unlist(final_phrases, use.names = F)
   
