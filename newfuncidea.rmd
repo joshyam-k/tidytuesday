@@ -1,0 +1,73 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+library(skimr)
+```
+
+```{r}
+tuesdata <- tt_load(2021, week = 21)
+
+survey <- tuesdata$survey
+```
+
+## cleaning country
+
+```{r}
+survey_clean <- survey %>% 
+  mutate(
+    country_clean = case_when(
+      country %in% c("United States", "USA", "US", "U.S.", "United States of America", "Usa", "United states", "usa", "Us", "united states", "U.S.A.", "us", "U.S", "United State", "Unites States", "United States of america", "UNITED STATES", "The United States", "United Sates") ~ "United States",
+      country %in% c("United Kingdom", "UK", "Uk", "United kingdom", "uk", "united kingdom") ~ "United Kingdom",
+      T ~ country
+    )
+  )
+```
+
+would be cool to write a function that makes all of this a whole lot easier
+
+maybe try binary
+
+```{r}
+name_variety <- function(name) {
+  
+  # separate string into its individual words
+  
+  words <- str_split(name, " ")[[1]]
+  
+  bank <- list()
+  for (i in seq_along(words)){
+    bank[[i]] <- c(str_to_lower(words[i]), str_to_upper(words[i]))
+
+  }
+  
+  bank
+  
+}
+
+
+for (i in seq_along(tt)) {
+  print(word[i])
+}
+```
+
+Things to check for:
+
+First letter capitalization: Yo Yo, yo Yo, Yo yo, yo yo
+entire word capitalization: YO YO, yo yo, YO yo, yo YO
+
+
+
+
+
+
+
+
+
+
+
