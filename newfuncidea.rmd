@@ -57,7 +57,7 @@ name_variety <- function(name) {
   
   # separate string into its individual words
   
-  words <- str_split(name, " ")[[1]]
+  words <- str_to_lower(str_split(name, " ")[[1]])
   
   # create bistrings
   
@@ -65,21 +65,29 @@ name_variety <- function(name) {
   
   binary_tibble <- as_tibble(binary_strings(n))
   
-  df_one <- binary_tibble
+  full_word_cap <- binary_tibble
+  first_letter_cap <- binary_tibble
+  
   for (row in 1:nrow(binary_tibble)) {
      for (col in 1:n) {
       if (binary_tibble[row, col] == '0') {
-        df_one[row, col] <- str_to_lower(words[col])
+        first_letter_cap[row, col] <- words[col]
+        full_word_cap[row, col] <- words[col]
       } else {
-        df_one[row, col] <- str_to_upper(words[col])
+        first_letter_cap[row, col] <- paste0(str_to_upper(str_sub(words[col], 1, 1)), str_sub(words[col], 2, -1))
+        full_word_cap[row, col] <- str_to_upper(words[col])
       }
 
      }
   }
   
-  df_one <- unite(df_one, phrase, 1:ncol(df_one), sep = " ")
+  first_letter_cap <- unite(first_letter_cap, phrase, 1:ncol(first_letter_cap), sep = " ")
+  full_word_cap <- unite(full_word_cap, phrase, 1:ncol(full_word_cap), sep = " ")
   
-  unlist(df_one, use.names = F)
+  final_phrases <- rbind(first_letter_cap, full_word_cap) %>% 
+    distinct(.keep_all = T)
+  
+  unlist(final_phrases, use.names = F)
   
 }
 
