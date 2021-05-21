@@ -31,6 +31,10 @@ survey_clean <- survey %>%
 
 would be cool to write a function that makes all of this a whole lot easier
 
+```{r}
+as_tibble(binary_strings(2))
+```
+
 
 ```{r}
 # binary string generator
@@ -53,7 +57,7 @@ name_variety <- function(name) {
   
   n <- length(words)
   
-  binary_tibble <- as_tibble(binary_strings(n))
+  binary_tibble <- as_tibble(binary_strings(n), .name_repair = "unique")
   
   # create placeholder tibbles to be filled with modified strings
   
