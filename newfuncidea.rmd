@@ -22,9 +22,9 @@ survey <- tuesdata$survey
 survey_clean <- survey %>% 
   mutate(
     country_clean = case_when(
-      country %in% c("United States", "USA", "US", "U.S.", "United States of America", "Usa", "United states", "usa", "Us", "united states", "U.S.A.", "us", "U.S", "United State", "Unites States", "United States of america", "UNITED STATES", "The United States", "United Sates") ~ "United States",
-      country %in% c("United Kingdom", "UK", "Uk", "United kingdom", "uk", "united kingdom") ~ "United Kingdom",
-      T ~ country
+      country %in% c("the United States", "the united states",
+                     "THE united States", "the UNITED STATES",
+                     "THE UNITED STATES", "The United States") ~ "USA"
     )
   )
 ```
@@ -87,6 +87,16 @@ name_variety <- function(name) {
   final_phrases <- rbind(first_letter_cap, full_word_cap) %>% 
     distinct(.keep_all = T)
   
+   if (stringr::str_detect(name, "'")) {
+     
+     to_add <- apos_rm(final_phrases)
+     
+     final_phrases <- rbind(final_phrases, to_add)
+     
+   }
+  
+  
+  
   # turn our dataframe into a vector where each object is a string
   
   unlist(final_phrases, use.names = F)
@@ -97,16 +107,82 @@ name_variety <- function(name) {
 
 ```
 
-Things to check for:
-
-First letter capitalization: Yo Yo, yo Yo, Yo yo, yo yo
-entire word capitalization: YO YO, yo yo, YO yo, yo YO
 
 
+```{r}
+test <- tibble(
+  names = c("clara's", "frank's", "tim's"),
+  last = c("hershey's", "noah's", "thank's")
+)
+```
+
+```{r}
+for (i in 1:nrow(test)) {
+  for (j in 1:ncol(test)) {
+    
+    test[i, j] <- str_remove_all(test[[i,j]], "'")
+    
+  }
+}
+
+apos_rm <- function(df) {
+  
+  test <- df
+  
+  for (i in 1:nrow(test)) {
+    for (j in 1:ncol(test)) {
+    
+      test[i, j] <- str_remove_all(test[[i,j]], "'")
+    
+      }
+  }
+  
+  test
+  
+}
+  
+```
 
 
+```{r}
+messy_string <- function(string, stop = F) {
+  
+  if (stringr::str_detect(string, "-")) {
+    
+    string2 <- stringr::str_replace_all(string, "-", " ")
+    
+    final_phrases <- name_variety(string2)
+    final_phrases2 <- name_variety(string2)
+    
+    final_phrases2 <- final_phrases2 %>% 
+      map_chr(~stringr::str_replace_all(.x, " ", "-"))
+    
+    ret <- c(final_phrases, final_phrases2)
+    
+  } else {
+    
+    ret <- name_variety(string)
+    
+  }
+  
+
+  
+  
+  
+}
+```
+
+```{r}
+test %>% 
+  map_chr(~str_replace(.x, " ", "-"))
+```
 
 
+```{r}
+library(tidytext)
+
+stop_words
+```
 
 
 
