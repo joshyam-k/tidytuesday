@@ -184,6 +184,12 @@ library(tidytext)
 stop_words
 ```
 
+```{r}
+library(messy)
+
+messy::messy_string("united-kingdom")
+```
+
 
 
 
