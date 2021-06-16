@@ -1,0 +1,39 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytuesdayR)
+library(skimr)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2021, week = 25)
+
+tweets <- tuesdata$tweets
+```
+
+```{r}
+# interesting trends
+tweets %>% 
+  mutate(tidytues = case_when(
+    str_detect(str_to_lower(content), "#tidytuesday") ~ "Included #tidytuesday",
+    T ~ "did not include #tidytuesday"
+  )) %>% 
+  filter(!is.na(tidytues), !is.na(like_count)) %>% 
+  group_by(tidytues) %>% 
+  summarise(mean_like = mean(like_count), mean_rt = mean(retweet_count)) %>% 
+  ggplot() +
+  geom_line(aes(x = tidytues, y = mean_like, group = 1), size = 3, color = "red") +
+  geom_line(aes(x = tidytues, y = mean_rt, group = 1), size = 3) +
+  ylim(c(0,40)) +
+  labs(
+    x = NULL,
+    y = NULL
+  ) +
+  theme_bw() 
+```
+
