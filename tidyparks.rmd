@@ -20,10 +20,14 @@ parks_raw <- tuesdata$parks
 ```{r}
 parks_raw %>% 
   count(year, sort = T) 
+  
 
-parks_raw %>% 
+parks_allyrs <- parks_raw %>% 
   count(city, sort = T) %>% 
-  View()
+  filter(n == 9) %>% 
+  select(city) %>% 
+  pull()
+  
 ```
 
 ## cleaning percents and dollar signs
@@ -37,6 +41,17 @@ parks <- parks_raw %>%
 parks %>% 
   ggplot(aes(park_pct_city_data)) +
   geom_histogram()
+
+parks %>% 
+  filter(city %in% parks_allyrs) %>% 
+  group_by(city) %>% 
+  summarise(mean_rank = mean(rank)) %>% 
+  mutate(city = fct_reorder(city, -mean_rank)) %>% 
+  ggplot(aes(x = city, y = mean_rank)) +
+  geom_col(fill = "midnightblue") +
+  labs(y = "Mean rank from 2012-2020") +
+  coord_flip() +
+  theme_minimal()
 
 ```
 
