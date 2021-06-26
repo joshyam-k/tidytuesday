@@ -55,3 +55,8 @@ parks %>%
 
 ```
 
+
+
+Just a small note to look into bayesian optimization a bit more.
+  - one note is that when dealing with tuning hyper-parameters, a brute force method isn't always doable, and so bayesian
+    optimization attempts to solve this problem!
