@@ -7,6 +7,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
+library(skimr)
+library(janitor)
 ```
 
 ## loading data in
@@ -15,6 +17,8 @@ library(tidytuesdayR)
 tuesdata <- tidytuesdayR::tt_load(2021, week = 26)
 
 parks_raw <- tuesdata$parks
+
+skim(parks_raw)
 ```
 
 ```{r}
